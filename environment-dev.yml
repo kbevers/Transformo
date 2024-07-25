@@ -1,0 +1,12 @@
+name: transformo-dev
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=2.0
+  - pytest
+  - black
+  - pylint
+  - pre-commit
+  - mypy
+  - isort

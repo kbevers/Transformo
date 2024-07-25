@@ -1,0 +1,37 @@
+[build-system]
+requires = [
+    'wheel',
+    'setuptools>=43.0.0',
+]
+build-backend = 'setuptools.build_meta'
+
+
+[tool.mypy]
+mypy_path = 'src/'
+packages = ['transformo']
+plugins = ['numpy.typing.mypy_plugin']
+
+
+[tool.black]
+
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+
+# Pylint setup - example can be generated using `pylint --generate-toml-config`
+[tool.pylint.main]
+
+# Minimum Python version to use for version dependent checks. Will default to the
+# version used to run pylint.
+py-version = "3.12"
+
+# Add paths to the list of the source roots. Supports globbing patterns. The
+# source root is an absolute path or a path relative to the current working
+# directory used to determine a package namespace for modules located under the
+# source root.
+source-roots = ["src/transformo"]
+
+[tool.pylint.format]
+# Maximum number of characters on a single line.
+max-line-length = 88

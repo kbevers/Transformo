@@ -1,0 +1,6 @@
+name: transformo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=2.0
