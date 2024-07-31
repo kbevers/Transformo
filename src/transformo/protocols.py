@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -12,6 +12,7 @@ from transformo import Coordinate
 class DataSourceLike(Protocol):
     """Protocol for TransformoReaders."""
 
+    type: Any
     coordinates: list[Coordinate]
 
     def __init__(self, coordinates: list[Coordinate] | None = None) -> None:

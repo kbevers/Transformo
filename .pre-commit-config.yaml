@@ -15,6 +15,7 @@ repos:
         additional_dependencies:
             - 'numpy'
             - 'pydantic'
+        exclude: test/
 -   repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:

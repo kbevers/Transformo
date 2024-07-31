@@ -2,10 +2,8 @@
 Transformo estimator classes.
 """
 
-from typing import Protocol
 
-
-class TransformoEstimator(Protocol):
+class TransformoEstimator:
     """Base estimator class."""
 
     def __init__(self) -> None:

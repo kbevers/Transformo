@@ -11,6 +11,9 @@ mypy_path = 'src/'
 packages = ['transformo']
 plugins = ['numpy.typing.mypy_plugin', 'pydantic.mypy']
 
+# The 'ruamel' intermittently causes problems.
+# Know issue, described here: https://github.com/python/mypy/issues/7276
+incremental = false
 
 [tool.black]
 
