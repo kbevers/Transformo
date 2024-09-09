@@ -27,16 +27,25 @@ class DataSource(pydantic.BaseModel):
     else:
         type: Literal["datasource"] = "datasource"
 
+    # User-specified name of the DataSource, for easy referencing
+    # when overriding settings
+    name: str | None = None
+
     # coordinates are not included in pipeline serialization
     coordinates: list[Coordinate] = pydantic.Field(default_factory=list, exclude=True)
 
-    def __init__(self, coordinates: list[Coordinate] | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        coordinates: list[Coordinate] | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> None:
         """Set up base reader."""
         if coordinates is None:
             # it's not kosher to initialize a value with [] as default
             coordinates = []
 
-        super().__init__(coordinates=coordinates, **kwargs)
+        super().__init__(coordinates=coordinates, name=name, **kwargs)
 
     def __add__(self, other) -> DataSourceLike:
         """
@@ -91,7 +100,7 @@ class CsvDataSource(DataSource):
         value separators and the following columns are all mandatory in the
         listed order:
 
-            station, t, x, y, z, wx, wy, wz
+            station, t, x, y, z, sx, sy, sz, w
 
         where station is the station name, t a timestamp given in decimalyears,
         (x,y,z) are the spatial coordinates and (wx, wy, wz) are the corresponding

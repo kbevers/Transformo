@@ -49,13 +49,26 @@ class Coordinate:
     y: float = pydantic.Field(allow_inf_nan=False, strict=True)
     z: float = pydantic.Field(allow_inf_nan=False, strict=True)
 
-    wx: float = pydantic.Field(1.0, ge=0.0, le=1.0, allow_inf_nan=False, strict=True)
-    wy: float = pydantic.Field(1.0, ge=0.0, le=1.0, allow_inf_nan=False, strict=True)
-    wz: float = pydantic.Field(1.0, ge=0.0, le=1.0, allow_inf_nan=False, strict=True)
+    # standard deviations, uncertainties
+    sx: float = pydantic.Field(ge=0.0, allow_inf_nan=False, strict=True)
+    sy: float = pydantic.Field(ge=0.0, allow_inf_nan=False, strict=True)
+    sz: float = pydantic.Field(ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate weight
+    w: float = pydantic.Field(1.0, ge=0.0, le=1.0, allow_inf_nan=False, strict=True)
 
     @classmethod
     def from_str(
-        cls, station: str, t: str, x: str, y: str, z: str, wx: str, wy: str, wz: str
+        cls,
+        station: str,
+        t: str,
+        x: str,
+        y: str,
+        z: str,
+        sx: str,
+        sy: str,
+        sz: str,
+        w: str = "1.0",
     ) -> Coordinate:
         """ "Instantiate a coordinate from string values"""
         return Coordinate(
@@ -64,9 +77,10 @@ class Coordinate:
             x=float(x),
             y=float(y),
             z=float(z),
-            wx=float(wx),
-            wy=float(wy),
-            wz=float(wz),
+            sx=float(sx),
+            sy=float(sy),
+            sz=float(sz),
+            w=float(w),
         )
 
     @property
@@ -75,6 +89,20 @@ class Coordinate:
         return np.array([self.x, self.y, self.z])
 
     @property
+    def stddev(self) -> np.typing.ArrayLike:
+        """
+        Coordinate standard deviations gives as a Numpy vector (1D array).
+        """
+        return np.array([self.sx, self.sy, self.sz])
+
+    @property
     def weights(self) -> np.typing.ArrayLike:
-        """Weights given as Numpy vector (1D array)."""
-        return np.array([self.wx, self.wy, self.wz])
+        """
+        Weights given as Numpy vector (1D array).
+
+        Weights are calculated as the inverse of the standard deviation on each
+        coordinate element multiplied by the weight supplied in Coordinate.w.
+        """
+        weights = np.divide(1, self.stddev)
+
+        return np.multiply(weights, self.w)

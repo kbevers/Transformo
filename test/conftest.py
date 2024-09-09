@@ -13,6 +13,13 @@ import transformo
 from transformo.datasources import DataSource
 
 
+def random_string(n: int = 10):
+    """
+    Return a string of random, upper case letters.
+    """
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=n))
+
+
 @pytest.fixture()
 def files() -> Dict[str, Path]:
     """
@@ -51,16 +58,15 @@ def coordinate_factory() -> Callable:
 
     def factory():
         return transformo.Coordinate(
-            station="".join(
-                random.choices(string.ascii_uppercase + string.digits, k=4)
-            ),
+            station=random_string(4),
             t=2000 + random.random() * 25,
             x=500000 + random.random() * 1000000,
             y=500000 + random.random() * 1000000,
             z=500000 + random.random() * 1000000,
-            wx=random.random(),
-            wy=random.random(),
-            wz=random.random(),
+            sx=random.random(),
+            sy=random.random(),
+            sz=random.random(),
+            w=random.random(),
         )
 
     return factory
@@ -81,7 +87,10 @@ def datasource_factory(coordinate_factory: Callable) -> Callable:
     """
 
     def factory():
-        return DataSource(coordinates=[coordinate_factory() for _ in range(10)])
+        return DataSource(
+            name=random_string(10),
+            coordinates=[coordinate_factory() for _ in range(10)],
+        )
 
     return factory
 

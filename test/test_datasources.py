@@ -15,7 +15,8 @@ def test_datasource(coordinate_factory: Callable) -> None:
     n = 10
 
     # Can we instantiate a DataSource from a coordinate list?
-    ds1 = DataSource(coordinates=[coordinate_factory() for _ in range(n)])
+    ds1 = DataSource(name="test", coordinates=[coordinate_factory() for _ in range(n)])
+    assert ds1.name == "test"
     assert len(ds1.coordinates) == n
 
     # Is the coordinate matrix property functioning as expected?

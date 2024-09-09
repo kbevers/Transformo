@@ -31,9 +31,9 @@ def test_pipeline_json_serilization(files: dict) -> None:
     )
 
     serialized_json = pipeline.to_json()
-    new_pipeline = TransformoPipeline.from_json(json=serialized_json)
-
     print(serialized_json)
+
+    new_pipeline = TransformoPipeline.from_json(json=serialized_json)
 
     # Check that the same coordinates are present in the two pipelines
     assert (
@@ -55,14 +55,18 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
     Test YAML serilization of a TransformoPipeline.
     """
     pipeline = TransformoPipeline(
-        source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
-        target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
+        source_data=[
+            CsvDataSource(name="itrf2024", filename=files["dk_cors_itrf2014.csv"])
+        ],
+        target_data=[
+            CsvDataSource(name="etrs89", filename=files["dk_cors_etrs89.csv"])
+        ],
     )
 
-    serialized_yaml = pipeline.to_json()
-    new_pipeline = TransformoPipeline.from_yaml(yaml=serialized_yaml)
-
+    serialized_yaml = pipeline.to_yaml()
     print(serialized_yaml)
+
+    new_pipeline = TransformoPipeline.from_yaml(yaml=serialized_yaml)
 
     # Check that the same coordinates are present in the two pipelines
     assert (
@@ -77,3 +81,6 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
     # that has a Path, but they should refer to the same file
     assert new_pipeline.source_data[0].filename == str(pipeline.source_data[0].filename)
     assert new_pipeline.target_data[0].filename == str(pipeline.target_data[0].filename)
+
+    assert new_pipeline.source_data[0].name == "itrf2024"
+    assert new_pipeline.target_data[0].name == "etrs89"
