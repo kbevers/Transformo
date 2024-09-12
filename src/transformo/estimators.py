@@ -4,7 +4,7 @@ Transformo estimator classes.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Literal
 
 import numpy as np
@@ -48,7 +48,7 @@ class Operator(pydantic.BaseModel):
         super().__init__(name=name, **kwargs)
 
     @classmethod
-    def get_subclasses(cls) -> Iterable[type[Estimator]]:
+    def get_subclasses(cls) -> Iterable[type[Operator]]:
         """
         Return a tuple of all known subclasses to `Estimator`.
 
@@ -58,7 +58,7 @@ class Operator(pydantic.BaseModel):
         """
         # the parent class "estimator" is needed in the list as well, since
         # DataSource's can be instantiated as well as classes inheriting from it
-        subclasses = [Estimator] + list(cls.__subclasses__())
+        subclasses = [Operator] + list(cls.__subclasses__())
 
         # we want to find all levels of subclasses, not just the first level
         for subclass in cls.__subclasses__():
