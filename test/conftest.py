@@ -7,10 +7,11 @@ import string
 from pathlib import Path
 from typing import Callable, Dict
 
+import numpy as np
 import pytest
 
 import transformo
-from transformo.datasources import DataSource
+from transformo.datasources import CsvDataSource, DataSource
 
 
 def random_string(n: int = 10):
@@ -76,6 +77,24 @@ def coordinate_factory() -> Callable:
 def coordinate(coordinate_factory: Callable) -> transformo.Coordinate:
     """Coordinate fixture."""
     return coordinate_factory()
+
+
+@pytest.fixture()
+def source_coordinates(files: dict) -> np.typing.ArrayLike:
+    """
+    A numpy array with source coordinates.
+    """
+    ds = CsvDataSource(filename=files["dk_cors_itrf2014.csv"])
+    return ds.coordinate_matrix
+
+
+@pytest.fixture()
+def target_coordinates(files: dict) -> np.typing.ArrayLike:
+    """
+    A numpy array with target coordinates.
+    """
+    ds = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
+    return ds.coordinate_matrix
 
 
 @pytest.fixture()

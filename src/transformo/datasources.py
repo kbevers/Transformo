@@ -12,7 +12,7 @@ import numpy as np
 import pydantic
 
 from transformo import Coordinate, TranformoReaderValidationError, logger
-from transformo.protocols import DataSourceLike
+from transformo.protocols import CoordinateMatrix, DataSourceLike
 
 
 class DataSource(pydantic.BaseModel):
@@ -78,7 +78,7 @@ class DataSource(pydantic.BaseModel):
         return tuple(set(subclasses))
 
     @property
-    def coordinate_matrix(self) -> np.typing.ArrayLike:
+    def coordinate_matrix(self) -> CoordinateMatrix:
         """
         The coordinates in matrix form.
         """

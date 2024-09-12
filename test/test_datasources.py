@@ -32,6 +32,14 @@ def test_datasource(coordinate_factory: Callable) -> None:
     assert ds_combined.coordinate_matrix.shape == (2 * n, 3)
     assert isinstance(ds_combined, DataSource)
 
+    ds_combined2 = ds1
+    for ds in [ds1, ds2]:
+        ds_combined2 = ds_combined2 + ds
+
+    assert len(ds_combined2.coordinates) == 3 * n
+    assert ds_combined2.coordinate_matrix.shape == (3 * n, 3)
+    assert isinstance(ds_combined2, DataSource)
+
 
 def test_csvdatasource(files: Dict[str, Path]) -> None:
     """

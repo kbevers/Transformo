@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, Dict
 
 from transformo.datasources import CsvDataSource
+from transformo.estimators import DummyEstimator, DummyTransformation
 from transformo.pipeline import TransformoPipeline
 
 
@@ -16,9 +17,32 @@ def test_pipeline(datasource_factory: Callable) -> None:
     pipeline = TransformoPipeline(
         source_data=[datasource_factory(), datasource_factory()],
         target_data=[datasource_factory(), datasource_factory()],
+        operators=[DummyTransformation(), DummyEstimator()],
     )
 
     assert isinstance(pipeline, TransformoPipeline)
+
+    # Test that source/target_coordinates properties are working as intended
+    n_coordinates = 2 * 10  # 2 datasources with 10 coordinates each
+    assert pipeline.source_coordinates.shape == (n_coordinates, 3)
+    assert pipeline.target_coordinates.shape == (n_coordinates, 3)
+
+    assert (
+        pipeline.source_coordinates[0, 0]
+        == pipeline.source_data[0].coordinates[0].vector[0]
+    )
+    assert (
+        pipeline.source_coordinates[15, 2]
+        == pipeline.source_data[1].coordinates[5].vector[2]
+    )
+    assert (
+        pipeline.target_coordinates[7, 0]
+        == pipeline.target_data[0].coordinates[7].vector[0]
+    )
+    assert (
+        pipeline.target_coordinates[19, 2]
+        == pipeline.target_data[1].coordinates[9].vector[2]
+    )
 
 
 def test_pipeline_json_serilization(files: dict) -> None:
@@ -28,6 +52,7 @@ def test_pipeline_json_serilization(files: dict) -> None:
     pipeline = TransformoPipeline(
         source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
         target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
+        operators=[DummyTransformation(), DummyEstimator()],
     )
 
     serialized_json = pipeline.to_json()
@@ -61,6 +86,7 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
         target_data=[
             CsvDataSource(name="etrs89", filename=files["dk_cors_etrs89.csv"])
         ],
+        operators=[DummyTransformation(), DummyEstimator()],
     )
 
     serialized_yaml = pipeline.to_yaml()
