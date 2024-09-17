@@ -24,6 +24,10 @@ class TranformoReaderValidationError(TransformoBaseException):
     """Transformo Reader validation error"""
 
 
+class TransformoParametersInvalidException(TransformoBaseException):
+    """Parameters not initialized correctly."""
+
+
 # Logging
 console_handler = logging.StreamHandler()
 logger = logging.getLogger(__name__)

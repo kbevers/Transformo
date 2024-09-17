@@ -5,12 +5,13 @@ Transformo estimator classes.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional
 
 import numpy as np
 import pydantic
 
-from transformo.protocols import CoordinateMatrix
+from transformo import TransformoParametersInvalidException
+from transformo.protocols import CoordinateMatrix, Vector
 
 
 class Operator(pydantic.BaseModel):
@@ -29,22 +30,12 @@ class Operator(pydantic.BaseModel):
     # when overriding settings
     name: str | None = None
 
-    # Kan en TypedDict bruges her? En generisk defineres her og specificeres nærmere
-    # i nedarvende klasser? Se https://docs.pydantic.dev/2.3/usage/types/dicts_mapping/#typeddict
-    # parameters: Dict[str, float | str | None] | None
-
     def __init__(
         self,
         name: str | None = None,
-        parameters: Dict[str, float | str] | None = None,
         **kwargs,
     ) -> None:
         """Set up base estimator."""
-
-        # if parameters is None:
-        #    parameters = {}
-
-        # super().__init__(name=name, parameters=parameters, **kwargs)
         super().__init__(name=name, **kwargs)
 
     @classmethod
@@ -74,53 +65,6 @@ class Operator(pydantic.BaseModel):
         Abstract. Needs to be implemented by inheriting classes.
         """
 
-    '''
-    @property
-    def has_parameters(self) -> bool:
-        """
-        Returns True if parameters are
-        """
-        return True
-    '''
-
-
-class Transformation(Operator):
-    """
-    .
-    """
-
-    if TYPE_CHECKING:
-        type: Any = "transformation"
-    else:
-        type: Literal["transformation"] = "transformation"
-
-
-class DummyTransformation(Transformation):
-    """
-    This Transformation is a dumb dumb.
-    """
-
-    type: Literal["dummy_transformation"] = "dummy_transformation"
-
-    def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
-        """
-        Forward method of the Transformation.
-
-        Basically re-defining the same abstract method from the parent class.
-        """
-        return coordinates
-
-
-class Estimator(Operator):
-    """
-    .
-    """
-
-    if TYPE_CHECKING:
-        type: Any = "estimator"
-    else:
-        type: Literal["estimator"] = "estimator"
-
     @abstractmethod
     def estimate(
         self,
@@ -135,19 +79,22 @@ class Estimator(Operator):
         For the base TransformoEstimator class this method does nothing.
         """
 
+    '''
+    @property
+    def has_parameters(self) -> bool:
+        """
+        Returns True if parameters are
+        """
+        return True
+    '''
 
-class DummyEstimator(Estimator):
+
+class DummyEstimator(Operator):
     """
     This Estimator is a dumb dumb.
     """
 
     type: Literal["dummy_estimator"] = "dummy_estimator"
-
-    def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
-        """
-        Forward method of the Transformation.
-        """
-        return coordinates
 
     def estimate(
         self,
@@ -158,8 +105,16 @@ class DummyEstimator(Estimator):
     ) -> None:
         """."""
 
+    def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
+        """
+        Forward method of the Transformation.
 
-class Helmert3ParameterEstimator(Estimator):
+        It simply returns the same coordinates as it receives. That's how dumb this operation is!
+        """
+        return coordinates
+
+
+class HelmertTranslation(Operator):
     """
     The 3 paramter Helmert transformation is a simple translation in the three
     principal directions of a earth-centered, earth-fixed coordinate system (or
@@ -172,33 +127,45 @@ class Helmert3ParameterEstimator(Estimator):
     using this class.
     """
 
-    type: Literal["helmert3parameter"] = "helmert3parameter"
+    type: Literal["helmert_translation"] = "helmert_translation"
 
-    def __init__(self, **kwargs) -> None:
-        """Set up for Helmert3ParameterEstimator."""
-        super().__init__(**kwargs)
+    # Parameters
+    x: Optional[float] = None
+    y: Optional[float] = None
+    z: Optional[float] = None
 
-        # self.parameters = {"x": None, "y": None, "z": None}
+    def __valid_parameters(self) -> bool:
+        """Returns True when parameters are valid."""
+        return self.x is not None or self.y is not None or self.z is not None
 
-    '''
     @property
-    def T(self) -> np.typing.ArrayLike:
+    def T(self) -> Vector:
         """
         The translation parameters as a vector.
         """
-        return np.array([
-            self.parameters["x"],
-            self.parameters["y"],
-            self.parameters["z"],
-        ])
-    '''
+        if not self.__valid_parameters():
+            raise TransformoParametersInvalidException(
+                "Parameters x, y and z can not be None"
+            )
+
+        return np.array(
+            [
+                self.x,
+                self.y,
+                self.z,
+            ]
+        )
 
     def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
         """
         Forward method of the 3 parameter Helmert.
         """
-        # return coordinates+self.T
-        return coordinates
+        if not self.__valid_parameters():
+            raise TransformoParametersInvalidException(
+                "Parameters x, y and z can not be None"
+            )
+
+        return coordinates + self.T
 
     def estimate(
         self,
@@ -209,14 +176,19 @@ class Helmert3ParameterEstimator(Estimator):
     ) -> None:
         """
         Estimate parameters.
+
+        Parameters `x`, `y` and `z` of this estimator *will* be overwritten once
+        this method is called.
+
+        Weights for source and target coordinates are ignored.
         """
 
         coordinate_differences = target_coordinates - source_coordinates
         mean_translation = np.mean(coordinate_differences, axis=0)
 
-        # self.parameters["x"] = mean_translation[0]
-        # self.parameters["y"] = mean_translation[1]
-        # self.parameters["z"] = mean_translation[2]
+        self.x = mean_translation[0]
+        self.y = mean_translation[1]
+        self.z = mean_translation[2]
 
         # residuals = target_coordinates - self.forward(source_coordinates)
         # print(source_coordinates)

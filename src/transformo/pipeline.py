@@ -11,12 +11,12 @@ import pydantic
 import pydantic_yaml
 
 from transformo.datasources import DataSource
-from transformo.estimators import Estimator, Operator
+from transformo.estimators import Operator
 from transformo.protocols import CoordinateMatrix, DataSourceLike, OperatorLike
 
 
 class TransformoPipeline(pydantic.BaseModel):
-    """The backbone of Transfomo"""
+    """The backbone of Transformo"""
 
     source_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
     target_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
@@ -86,6 +86,6 @@ class TransformoPipeline(pydantic.BaseModel):
         Process all operators in the pipeline.
         """
         for operator in self.operators:
-            if isinstance(operator, Estimator):
+            if isinstance(operator, Operator):
                 pass
                 # operator.estimate(source_coordinates)
