@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Dict
 
 from transformo.datasources import CsvDataSource
-from transformo.estimators import DummyEstimator
+from transformo.operators import DummyOperator
 from transformo.pipeline import TransformoPipeline
 
 
@@ -17,7 +17,7 @@ def test_pipeline(datasource_factory: Callable) -> None:
     pipeline = TransformoPipeline(
         source_data=[datasource_factory(), datasource_factory()],
         target_data=[datasource_factory(), datasource_factory()],
-        operators=[DummyEstimator(), DummyEstimator()],
+        operators=[DummyOperator(), DummyOperator()],
     )
 
     assert isinstance(pipeline, TransformoPipeline)
@@ -52,7 +52,7 @@ def test_pipeline_json_serilization(files: dict) -> None:
     pipeline = TransformoPipeline(
         source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
         target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
-        operators=[DummyEstimator(), DummyEstimator()],
+        operators=[DummyOperator(), DummyOperator()],
     )
 
     serialized_json = pipeline.to_json()
@@ -86,7 +86,7 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
         target_data=[
             CsvDataSource(name="etrs89", filename=files["dk_cors_etrs89.csv"])
         ],
-        operators=[DummyEstimator(), DummyEstimator()],
+        operators=[DummyOperator(), DummyOperator()],
     )
 
     serialized_yaml = pipeline.to_yaml()

@@ -11,7 +11,7 @@ import pydantic
 import pydantic_yaml
 
 from transformo.datasources import DataSource
-from transformo.estimators import Operator
+from transformo.operators import Operator
 from transformo.protocols import CoordinateMatrix, DataSourceLike, OperatorLike
 
 

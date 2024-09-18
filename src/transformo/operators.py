@@ -1,5 +1,5 @@
 """
-Transformo estimator classes.
+Transformo operator classes.
 """
 
 from __future__ import annotations
@@ -35,19 +35,19 @@ class Operator(pydantic.BaseModel):
         name: str | None = None,
         **kwargs,
     ) -> None:
-        """Set up base estimator."""
+        """Set up base operator."""
         super().__init__(name=name, **kwargs)
 
     @classmethod
     def get_subclasses(cls) -> Iterable[type[Operator]]:
         """
-        Return a tuple of all known subclasses to `Estimator`.
+        Return a tuple of all known subclasses to `Operator`.
 
         This classmethod supports pydantic in dynamically creating a valid model
         for the Pipeline class when serialising the pipeline from an external
         configuration file.
         """
-        # the parent class "estimator" is needed in the list as well, since
+        # the parent class "operator" is needed in the list as well, since
         # DataSource's can be instantiated as well as classes inheriting from it
         subclasses = [Operator] + list(cls.__subclasses__())
 
@@ -76,7 +76,7 @@ class Operator(pydantic.BaseModel):
         """
         Estimate parameters.
 
-        For the base TransformoEstimator class this method does nothing.
+        For the base Operator class this method does nothing.
         """
 
     '''
@@ -89,12 +89,12 @@ class Operator(pydantic.BaseModel):
     '''
 
 
-class DummyEstimator(Operator):
+class DummyOperator(Operator):
     """
-    This Estimator is a dumb dumb.
+    This Operator is a dumb dumb.
     """
 
-    type: Literal["dummy_estimator"] = "dummy_estimator"
+    type: Literal["dummy_operator"] = "dummy_operator"
 
     def estimate(
         self,
@@ -177,7 +177,7 @@ class HelmertTranslation(Operator):
         """
         Estimate parameters.
 
-        Parameters `x`, `y` and `z` of this estimator *will* be overwritten once
+        Parameters `x`, `y` and `z` of this operator *will* be overwritten once
         this method is called.
 
         Weights for source and target coordinates are ignored.
@@ -189,9 +189,3 @@ class HelmertTranslation(Operator):
         self.x = mean_translation[0]
         self.y = mean_translation[1]
         self.z = mean_translation[2]
-
-        # residuals = target_coordinates - self.forward(source_coordinates)
-        # print(source_coordinates)
-        # print(target_coordinates)
-        # print(coordinate_differences)
-        # print(residuals)

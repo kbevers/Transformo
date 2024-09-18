@@ -8,12 +8,12 @@ import numpy as np
 import pytest
 
 from transformo import TransformoParametersInvalidException
-from transformo.estimators import DummyEstimator, HelmertTranslation, Operator
+from transformo.operators import DummyOperator, HelmertTranslation, Operator
 
 
 def test_estimator(source_coordinates, target_coordinates):
     """."""
-    estimator = DummyEstimator(name="captaindumbdumb")
+    estimator = DummyOperator(name="captaindumbdumb")
 
     assert isinstance(estimator, Operator)
 
