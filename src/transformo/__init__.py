@@ -16,6 +16,12 @@ class TransformoBaseException(Exception):
     """Base exception for Transformo"""
 
 
+class TransformoNotImplemented(TransformoBaseException):
+    """
+    This is thrown when a "soft abstract" method is not implemented.
+    """
+
+
 class TransformoReaderError(TransformoBaseException):
     """Transformo Reader error"""
 

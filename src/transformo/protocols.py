@@ -12,6 +12,8 @@ from transformo import Coordinate
 Vector = Annotated[npt.NDArray[np.floating], Literal[3, 1]]
 CoordinateMatrix = Annotated[npt.NDArray[np.floating], Literal["N", 3]]
 
+ParameterValue = str | float
+
 
 class DataSourceLike(Protocol):
     """Protocol for TransformoReaders."""
