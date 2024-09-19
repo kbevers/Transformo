@@ -59,6 +59,9 @@ def test_base_operator(source_coordinates):
     assert operator.parameters == operator._parameter_dict()
     assert operator.parameters == {}
 
+    # The `estimate()` method is not implemented so this should return False
+    assert operator.can_estimate is False
+
 
 def test_dummyoperator(source_coordinates, target_coordinates):
     """."""
@@ -71,10 +74,15 @@ def test_dummyoperator(source_coordinates, target_coordinates):
 
     operator.estimate(source_coordinates, target_coordinates, None, None)
 
+    # The `DummyOperator`` should be able to run the `estimate()` method
+    assert operator.can_estimate is True
+
 
 def test_helmerttranslation():
     """."""
     helmert_with_no_parameters = HelmertTranslation(name="anything_really")
+
+    assert helmert_with_no_parameters.can_estimate is True
 
     # Without specifying any parameters we should
     print(helmert_with_no_parameters.T)
@@ -82,6 +90,8 @@ def test_helmerttranslation():
     assert helmert_with_no_parameters._transformation_parameters_given is False
 
     helmert_with_one_parameter = HelmertTranslation(name="anything_really", y=5.0)
+    assert helmert_with_one_parameter.can_estimate is False
+
     print(helmert_with_one_parameter.T)
     assert np.sum(helmert_with_one_parameter.T) == 5
     assert helmert_with_one_parameter._transformation_parameters_given is True

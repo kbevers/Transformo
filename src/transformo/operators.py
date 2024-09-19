@@ -105,6 +105,38 @@ class Operator(pydantic.BaseModel):
         """Helper for `parameters` property."""
 
     @property
+    def can_estimate(self) -> bool:
+        """
+        Determine if an `Operator` is able to estimate parameters or not.
+
+        An operator can be unfit for estimating parameters in two ways:
+
+            1. The `estimate()` method is not implemented
+        or
+            2. The `Operator` was invoked with parameters that would otherwise
+               need to be estimated
+
+        In the last case the operator will only be used to convert coordinates
+        using the `forward()` method of the `Operator`.
+        """
+        if self._transformation_parameters_given:
+            return False
+
+        # If we get to here, no parameters were supplied by the user and
+        # we are expected to estimate them. We don't want to spend to much
+        # energy on this, so simple coordinate and weight matrices are
+        # given as input. If `estimate()` is implemented *some* parameters
+        # will be estimated and stored in the `Operator` but they will be
+        # discarded when `estimate()` is executed again with proper input.
+        zero_matrix = np.zeros(shape=(4, 3))
+        try:
+            self.estimate(zero_matrix, zero_matrix, zero_matrix, zero_matrix)
+        except TransformoNotImplemented:
+            return False
+
+        return True
+
+    @property
     def parameters(self) -> dict[str, ParameterValue]:
         """
         Return parameters in a standardized way.
@@ -212,7 +244,6 @@ class HelmertTranslation(Operator):
         super().__init__(**kwargs)
 
         # if one or more parameter is given at instantiation time
-        # if self.x is not None or self.y is not None or self.z is not None:
         if not _isnan(self.x) or not _isnan(self.y) or not _isnan(self.z):
             self._transformation_parameters_given = True
 
@@ -221,15 +252,12 @@ class HelmertTranslation(Operator):
 
     def _sanitize_parameters(self) -> None:
         """Make sure that translation parameters are not None."""
-        # if self.x is None:
         if _isnan(self.x):
             self.x = 0.0
 
-        # if self.y is None:
         if _isnan(self.y):
             self.y = 0.0
 
-        # if self.z is None:
         if _isnan(self.z):
             self.z = 0.0
 

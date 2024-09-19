@@ -10,6 +10,7 @@ import numpy as np
 import pydantic
 import pydantic_yaml
 
+from transformo import TransformoNotImplemented
 from transformo.datasources import DataSource
 from transformo.operators import Operator
 from transformo.typing import CoordinateMatrix, DataSourceLike, OperatorLike
@@ -85,7 +86,15 @@ class TransformoPipeline(pydantic.BaseModel):
         """
         Process all operators in the pipeline.
         """
+
+        current_step_coordinates = self.source_coordinates
         for operator in self.operators:
-            if isinstance(operator, Operator):
-                pass
-                # operator.estimate(source_coordinates)
+            if operator.can_estimate:
+                operator.estimate(
+                    current_step_coordinates,
+                    self.target_coordinates,
+                    # TODO: Handle weights
+                    None,
+                    None,
+                )
+            current_step_coordinates = operator.forward(current_step_coordinates)

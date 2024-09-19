@@ -5,8 +5,9 @@ Test the pipeline class.
 from pathlib import Path
 from typing import Callable, Dict
 
-from transformo.datasources import CsvDataSource
-from transformo.operators import DummyOperator
+from transformo import Coordinate
+from transformo.datasources import CsvDataSource, DataSource
+from transformo.operators import DummyOperator, HelmertTranslation
 from transformo.pipeline import TransformoPipeline
 
 
@@ -110,3 +111,32 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
 
     assert new_pipeline.source_data[0].name == "itrf2024"
     assert new_pipeline.target_data[0].name == "etrs89"
+
+
+def test_pipeline_estimation_using_helmert_translation() -> None:
+    """
+    .
+    """
+
+    src_coords = [Coordinate("TEST", 2024.75, 0, 0, 0, 0, 0, 0, 1) for _ in range(10)]
+    tgt_coords = [
+        Coordinate("TEST", 2024.75, 10, 200, 3000, 0, 0, 0, 1) for _ in range(10)
+    ]
+
+    source = DataSource(coordinates=src_coords)
+    target = DataSource(coordinates=tgt_coords)
+
+    helmert_transformation = HelmertTranslation(y=150)
+    helmert_estimation = HelmertTranslation()
+
+    pipeline = TransformoPipeline(
+        source_data=[source],
+        target_data=[target],
+        operators=[helmert_transformation, helmert_estimation],
+    )
+
+    pipeline.process()
+
+    print(helmert_transformation.parameters)
+    print(helmert_estimation.parameters)
+    assert helmert_estimation.y == 50
