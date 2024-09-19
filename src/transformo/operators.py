@@ -12,7 +12,7 @@ import numpy as np
 import pydantic
 
 from transformo import TransformoNotImplemented
-from transformo.protocols import CoordinateMatrix, ParameterValue, Vector
+from transformo.typing import CoordinateMatrix, ParameterValue, Vector
 
 
 # MyPy acts up a bit when encountering class variables that are Optional.

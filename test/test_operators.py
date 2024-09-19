@@ -9,7 +9,7 @@ import pytest
 
 from transformo import TransformoNotImplemented
 from transformo.operators import DummyOperator, HelmertTranslation, Operator
-from transformo.protocols import CoordinateMatrix
+from transformo.typing import CoordinateMatrix
 
 
 def test_base_operator(source_coordinates):

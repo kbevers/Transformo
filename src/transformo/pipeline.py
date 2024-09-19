@@ -12,7 +12,7 @@ import pydantic_yaml
 
 from transformo.datasources import DataSource
 from transformo.operators import Operator
-from transformo.protocols import CoordinateMatrix, DataSourceLike, OperatorLike
+from transformo.typing import CoordinateMatrix, DataSourceLike, OperatorLike
 
 
 class TransformoPipeline(pydantic.BaseModel):

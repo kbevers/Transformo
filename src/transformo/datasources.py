@@ -12,7 +12,7 @@ import numpy as np
 import pydantic
 
 from transformo import Coordinate, TranformoReaderValidationError, logger
-from transformo.protocols import CoordinateMatrix, DataSourceLike
+from transformo.typing import CoordinateMatrix, DataSourceLike
 
 
 class DataSource(pydantic.BaseModel):
