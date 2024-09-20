@@ -87,6 +87,32 @@ class DataSource(pydantic.BaseModel):
             [c.vector for c in self.coordinates]  # pylint: disable=not-an-iterable
         )
 
+    def update_coordinates(self, coordinates: CoordinateMatrix) -> DataSource:
+        """
+        Create a new DataSource based on the current instance but with the
+        coordinates updated to those in `coordinates`.
+        """
+        old_coordinates: list[Coordinate] = self.coordinates
+        if len(old_coordinates) != coordinates.shape[0]:
+            raise ValueError("Incorrect number of coordinates!")
+
+        new_coordinates: list[Coordinate] = []
+        for i, coord in enumerate(old_coordinates):
+            coord = Coordinate(
+                station=coord.station,
+                t=coord.t,
+                x=coordinates[i, 0],
+                y=coordinates[i, 1],
+                z=coordinates[i, 2],
+                sx=coord.sx,
+                sy=coord.sy,
+                sz=coord.sz,
+                w=coord.w,
+            )
+            new_coordinates.append(coord)
+
+        return DataSource(coordinates=new_coordinates)
+
 
 class CsvDataSource(DataSource):
     """Reader for generic CSV-files."""

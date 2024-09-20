@@ -140,3 +140,32 @@ def test_pipeline_estimation_using_helmert_translation() -> None:
     print(helmert_transformation.parameters)
     print(helmert_estimation.parameters)
     assert helmert_estimation.y == 50
+
+
+def test_pipeline_access() -> None:
+    """
+    .
+    """
+    src_coords = [Coordinate("TEST", 2024.75, 0, 0, 0, 0, 0, 0, 1) for _ in range(10)]
+    tgt_coords = [
+        Coordinate("TEST", 2024.75, 10, 200, 3000, 0, 0, 0, 1) for _ in range(10)
+    ]
+
+    source = DataSource(coordinates=src_coords)
+    target = DataSource(coordinates=tgt_coords)
+
+    helmert_transformation = HelmertTranslation(y=150)
+    helmert_estimation = HelmertTranslation()
+
+    pipeline = TransformoPipeline(
+        source_data=[source],
+        target_data=[target],
+        operators=[helmert_transformation, helmert_estimation],
+    )
+
+    pipeline.process()
+
+    # residuals
+    step_residuals = []
+    for step in pipeline.operators:
+        step_coordinates = source.coordinate_matrix

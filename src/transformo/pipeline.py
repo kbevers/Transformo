@@ -10,7 +10,6 @@ import numpy as np
 import pydantic
 import pydantic_yaml
 
-from transformo import TransformoNotImplemented
 from transformo.datasources import DataSource
 from transformo.operators import Operator
 from transformo.typing import CoordinateMatrix, DataSourceLike, OperatorLike
@@ -33,6 +32,8 @@ class TransformoPipeline(pydantic.BaseModel):
         super().__init__(
             source_data=source_data, target_data=target_data, operators=operators
         )
+
+        # self._intermediate_results: list[DataSource] = [self.source_data]
 
     @classmethod
     def from_json(cls, json: str | bytes | bytearray) -> TransformoPipeline:
@@ -86,7 +87,6 @@ class TransformoPipeline(pydantic.BaseModel):
         """
         Process all operators in the pipeline.
         """
-
         current_step_coordinates = self.source_coordinates
         for operator in self.operators:
             if operator.can_estimate:
