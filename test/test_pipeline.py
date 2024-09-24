@@ -144,7 +144,14 @@ def test_pipeline_estimation_using_helmert_translation() -> None:
 
 def test_pipeline_access() -> None:
     """
-    .
+    Test the intermediate results of a pipeline process.
+
+    A pipeline of two steps is defined, the first is a transformation and the
+    second is an estimation operation. Both are based on the HelmertTranslation
+    as it's simple nature makes it easy to calculate the expected results
+    beforehand. Here only one set of source/target coordinates is given which
+    in turn simplifies the Helmert Operations to addition and subtraction between
+    the steps.
     """
     src_coords = [Coordinate("TEST", 2024.75, 0, 0, 0, 0, 0, 0, 1) for _ in range(10)]
     tgt_coords = [
@@ -165,7 +172,18 @@ def test_pipeline_access() -> None:
 
     pipeline.process()
 
-    # residuals
-    step_residuals = []
-    for step in pipeline.operators:
-        step_coordinates = source.coordinate_matrix
+    # check expected residuals
+    results = pipeline.results
+    # difference from source to step one - we expect a y-offset of 150 m,
+    # as specified with the given parameter for `helmert_transformation`
+    assert results[1].coordinates[0].x - results[0].coordinates[0].x == 0
+    assert results[1].coordinates[0].y - results[0].coordinates[0].y == 150
+    assert results[1].coordinates[0].z - results[0].coordinates[0].z == 0
+    # difference between step two and one
+    assert results[2].coordinates[0].x - results[1].coordinates[0].x == 10
+    assert results[2].coordinates[0].y - results[1].coordinates[0].y == 50
+    assert results[2].coordinates[0].z - results[1].coordinates[0].z == 3000
+    # difference between step two and target coordinates
+    assert results[3].coordinates[0].x - results[2].coordinates[0].x == 0
+    assert results[3].coordinates[0].y - results[2].coordinates[0].y == 0
+    assert results[3].coordinates[0].z - results[2].coordinates[0].z == 0

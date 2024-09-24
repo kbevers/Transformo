@@ -16,6 +16,10 @@ class TransformoBaseException(Exception):
     """Base exception for Transformo"""
 
 
+class TransformoError(TransformoBaseException):
+    """Thown when a non-distinct error occurs."""
+
+
 class TransformoNotImplemented(TransformoBaseException):
     """
     This is thrown when a "soft abstract" method is not implemented.

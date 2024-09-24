@@ -10,6 +10,7 @@ import numpy as np
 import pydantic
 import pydantic_yaml
 
+from transformo import TransformoError
 from transformo.datasources import DataSource
 from transformo.operators import Operator
 from transformo.typing import CoordinateMatrix, DataSourceLike, OperatorLike
@@ -33,7 +34,17 @@ class TransformoPipeline(pydantic.BaseModel):
             source_data=source_data, target_data=target_data, operators=operators
         )
 
-        # self._intermediate_results: list[DataSource] = [self.source_data]
+        def combine_datasources(sources=list[DataSource]) -> DataSource:
+            combined_datasource = sources[0]
+            for source in sources[1:]:
+                combined_datasource += source
+            return combined_datasource
+
+        # set up combined datasources for both source and target data
+        self._combined_source_data = combine_datasources(self.source_data)
+        self._combined_target_data = combine_datasources(self.target_data)
+
+        self._intermediate_results: list[DataSource] = [self._combined_source_data]
 
     @classmethod
     def from_json(cls, json: str | bytes | bytearray) -> TransformoPipeline:
@@ -60,6 +71,29 @@ class TransformoPipeline(pydantic.BaseModel):
         Return the pipeline setup as YAML.
         """
         return pydantic_yaml.to_yaml_str(self)
+
+    @property
+    def all_source_data(self) -> DataSource:
+        """
+        A combination of all source DataSource's.
+        """
+        return self._combined_source_data
+
+    @property
+    def all_target_data(self) -> DataSource:
+        """
+        A combination of all target DataSource's.
+        """
+        return self._combined_target_data
+
+    @property
+    def results(self) -> list[DataSource]:
+        """
+        ...
+        """
+        if len(self._intermediate_results) != len(self.operators) + 2:
+            raise TransformoError("Pipeline has not been processed yet")
+        return self._intermediate_results
 
     @property
     def source_coordinates(self) -> CoordinateMatrix:
@@ -98,3 +132,9 @@ class TransformoPipeline(pydantic.BaseModel):
                     None,
                 )
             current_step_coordinates = operator.forward(current_step_coordinates)
+            current_step_datasource = self.all_source_data.update_coordinates(
+                current_step_coordinates
+            )
+            self._intermediate_results.append(current_step_datasource)
+
+        self._intermediate_results.append(self._combined_target_data)
