@@ -33,6 +33,9 @@ def test_base_operator(source_coordinates):
         def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
             return coordinates
 
+        def _proj_name(self) -> str:
+            return "noop"
+
         def _parameter_dict(self) -> dict[str, str | float]:
             return {}
 
@@ -54,6 +57,10 @@ def test_base_operator(source_coordinates):
     subclasses = Operator.get_subclasses()
     assert Operator in subclasses
     assert ChildOperator in subclasses
+
+    # Some checks for the `proj_operation_name` property
+    assert operator.proj_operation_name == operator._proj_name()
+    assert operator.proj_operation_name == "noop"
 
     # Some checks for the `parameters` property
     assert operator.parameters == operator._parameter_dict()

@@ -101,6 +101,10 @@ class Operator(pydantic.BaseModel):
         return tuple(set(subclasses))
 
     @abstractmethod
+    def _proj_name(self) -> str:
+        """Help for `proj_operation_name` property."""
+
+    @abstractmethod
     def _parameter_dict(self) -> dict[str, ParameterValue]:
         """Helper for `parameters` property."""
 
@@ -137,6 +141,14 @@ class Operator(pydantic.BaseModel):
         return True
 
     @property
+    def proj_operation_name(self) -> str:
+        """
+        Return the name of the PROJ operation that relates to
+        the Transformo Operator.
+        """
+        return self._proj_name()
+
+    @property
     def parameters(self) -> dict[str, ParameterValue]:
         """
         Return parameters in a standardized way.
@@ -145,6 +157,13 @@ class Operator(pydantic.BaseModel):
         the keys with their corresponding values. Parameter names in the keys
         are generally meant to be the same as they would be in PROJ (without the
         +'s).
+
+        Following PROJ conventions, a parameter entry be on one of the following
+        forms:
+
+            1. +param=number
+            2. +param=string
+            3. +
 
         Abstract method. Needs to be implemented by inheriting classes.
         """
@@ -190,6 +209,9 @@ class DummyOperator(Operator):
 
     def _parameter_dict(self) -> dict[str, ParameterValue]:
         return {}
+
+    def _proj_name(self) -> str:
+        return "noop"
 
     def estimate(
         self,
@@ -261,12 +283,21 @@ class HelmertTranslation(Operator):
         if _isnan(self.z):
             self.z = 0.0
 
+    def _proj_name(self) -> str:
+        return "helmert"
+
     def _parameter_dict(self) -> dict[str, ParameterValue]:
-        return {
-            "x": _float(self.x),
-            "y": _float(self.y),
-            "z": _float(self.z),
-        }
+        params: dict[str, ParameterValue] = {}
+        if not _isnan(self.x) and self.x != 0.0:
+            params["x"] = _float(self.x)
+
+        if not _isnan(self.y) and self.y != 0.0:
+            params["y"] = _float(self.y)
+
+        if not _isnan(self.z) and self.z != 0.0:
+            params["z"] = _float(self.z)
+
+        return params
 
     @property
     def T(self) -> Vector:
