@@ -9,6 +9,7 @@ from transformo import Coordinate
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.operators import DummyOperator, HelmertTranslation
 from transformo.pipeline import TransformoPipeline
+from transformo.presenters import CoordinatePresenter, DummyPresenter, PROJPresenter
 
 
 def test_pipeline(datasource_factory: Callable) -> None:
@@ -19,6 +20,7 @@ def test_pipeline(datasource_factory: Callable) -> None:
         source_data=[datasource_factory(), datasource_factory()],
         target_data=[datasource_factory(), datasource_factory()],
         operators=[DummyOperator(), DummyOperator()],
+        presenters=[DummyPresenter(), DummyPresenter()],
     )
 
     assert isinstance(pipeline, TransformoPipeline)
@@ -54,6 +56,7 @@ def test_pipeline_json_serilization(files: dict) -> None:
         source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
         target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
         operators=[DummyOperator(), DummyOperator()],
+        presenters=[DummyPresenter(), DummyPresenter()],
     )
 
     serialized_json = pipeline.to_json()
@@ -88,6 +91,7 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
             CsvDataSource(name="etrs89", filename=files["dk_cors_etrs89.csv"])
         ],
         operators=[DummyOperator(), DummyOperator()],
+        presenters=[DummyPresenter(), DummyPresenter()],
     )
 
     serialized_yaml = pipeline.to_yaml()
@@ -133,6 +137,7 @@ def test_pipeline_estimation_using_helmert_translation() -> None:
         source_data=[source],
         target_data=[target],
         operators=[helmert_transformation, helmert_estimation],
+        presenters=[DummyPresenter(), DummyPresenter()],
     )
 
     pipeline.process()
@@ -168,6 +173,7 @@ def test_pipeline_access() -> None:
         source_data=[source],
         target_data=[target],
         operators=[helmert_transformation, helmert_estimation],
+        presenters=[PROJPresenter(), DummyPresenter()],
     )
 
     pipeline.process()
@@ -187,3 +193,20 @@ def test_pipeline_access() -> None:
     assert results[3].coordinates[0].x - results[2].coordinates[0].x == 0
     assert results[3].coordinates[0].y - results[2].coordinates[0].y == 0
     assert results[3].coordinates[0].z - results[2].coordinates[0].z == 0
+
+
+def test_pipeline_results_as_text(files: dict) -> None:
+    """
+    Test `results_as_text` method.
+    """
+    pipeline = TransformoPipeline(
+        source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
+        target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
+        operators=[HelmertTranslation()],
+        presenters=[PROJPresenter(), CoordinatePresenter()],
+    )
+
+    pipeline.process()
+
+    print(pipeline.results_as_text())
+    assert True

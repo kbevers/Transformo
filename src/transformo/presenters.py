@@ -6,12 +6,27 @@ from __future__ import annotations
 
 import json
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Protocol
 
 import pydantic
 
-from transformo.datasources import DataSource
-from transformo.operators import Operator
+from transformo import Coordinate
+from transformo.datasources import DataSource, DataSourceLike
+from transformo.operators import Operator, OperatorLike
+
+
+class PresenterLike(Protocol):
+    """Protocal for Transformo Presenter classes."""
+
+    type: Any
+
+    def evaluate(
+        self, operators: list[OperatorLike], results: list[DataSourceLike]
+    ) -> None:
+        """
+        Parse information from operators and result datasources and store in
+        internal data container for further processing.
+        """
 
 
 class Presenter(pydantic.BaseModel):
@@ -58,12 +73,10 @@ class Presenter(pydantic.BaseModel):
         return tuple(set(subclasses))
 
     @abstractmethod
-    def parse_results(
-        self, operators: list[Operator], results: list[DataSource]
-    ) -> None:
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
         """
-        Parse information from operators and result datasources and store in
-        internal data container for further processing.
+        Evalute information from operators and result datasources and store in
+        internal data container for use in program output.
         """
 
     @abstractmethod
@@ -71,6 +84,37 @@ class Presenter(pydantic.BaseModel):
         """
         Present results as JSON.
         """
+
+    @abstractmethod
+    def as_text(self) -> str:
+        """
+        Present result in text format.
+        """
+
+
+class DummyPresenter(Presenter):
+    """
+    A presenter that doesn't do much...
+    """
+
+    type: Literal["dummy_presenter"] = "dummy_presenter"
+
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+        """
+        Evaluate `results` created by `operators`.
+        """
+
+    def as_json(self) -> str:
+        """
+        Present results as JSON.
+        """
+        return "{}"
+
+    def as_text(self) -> str:
+        """
+        Present result in text format.
+        """
+        return ""
 
 
 class PROJPresenter(Presenter):
@@ -89,35 +133,35 @@ class PROJPresenter(Presenter):
 
         self._output: dict[str, str] = {}
 
-    def parse_results(
-        self, operators: list[Operator], results: list[DataSource]
-    ) -> None:
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
         """
         Parse parameters from `operators`.
 
         Ignores contents of `results`.
         """
-        if len(operators) == 0:
-            self._output["projstring"] = "+proj=noop"
-            return
-
-        projstr = ""
-        if len(operators) > 1:
-            projstr = "+proj=pipeline"
-
+        steps = []
         for operator in operators:
-            if len(operators) > 1:
-                projstr += " +step "
+            if operator.proj_operation_name == "noop":
+                continue
 
-            projstr += f"+proj={operator.proj_operation_name}"
-
+            projstr = f"+proj={operator.proj_operation_name}"
             for param, value in operator.parameters.items():
                 if value is None:
                     projstr += f" +{param}"
                 else:
                     projstr += f" +{param}={value}"
 
-        self._output["projstring"] = projstr
+            steps.append(projstr)
+
+        if len(steps) == 0:
+            self._output["projstring"] = "+proj=noop"
+            return
+
+        if len(steps) == 1:
+            self._output["projstring"] = steps[0]
+            return
+
+        self._output["projstring"] = "+proj=pipeline +step " + " +step ".join(steps)
 
     def as_json(self) -> str:
         """
@@ -131,4 +175,81 @@ class PROJPresenter(Presenter):
         """Return PROJstring as text."""
         params = json.loads(self.as_json())
         txt = params["projstring"]
-        return txt.replace(" +step", "\n  +step")
+        return txt.replace(" +step", "\n  +step").strip()
+
+
+class CoordinatePresenter(Presenter):
+    """
+    Present coordinates for all stages of a pipeline.
+
+    Possible future useful settings:
+        - Include timestamps
+
+    """
+
+    type: Literal["coordinate_presenter"] = "coordinate_presenter"
+
+    def __init__(self, **kwargs) -> None:
+        """."""
+        super().__init__(**kwargs)
+
+        self._operator_titles: list[str] = []
+        self._steps: list[dict[str, list[float]]] = []
+
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+        """
+        Parse coordinates from `results`.
+
+        Ignores contents of `operators`.
+
+        Assumptions about DataSources in `results`:
+
+          - they are of the same size
+          - cointain coordinates for the same stations across each step
+          - are ordered by stations in the same way across each step.
+
+        This should hold true as long as `results` has it's origin in a
+        Pipeline.
+        """
+        steps = []
+        for ds in results:
+            data = {}
+            for c in ds.coordinates:
+                data[c.station] = [c.x, c.y, c.z]
+            steps.append(data)
+
+        self._steps = steps
+
+        operator_titles = []
+        for operator in operators:
+            operator_titles.append(repr(operator))
+
+        self._operator_titles = operator_titles
+
+    def as_json(self) -> str:
+        return json.dumps(self._steps)
+
+    def as_text(self) -> str:
+        fmt = ">14.5f"
+
+        txt = ""
+        for i, step in enumerate(self._steps):
+            if i == 0:
+                stepname = "Source coordinates"
+            elif i < len(self._steps) - 1:
+                stepname = f"Step {i}: {self._operator_titles[i-1]}"
+            else:
+                stepname = "Target coordinates"
+
+            txt += "=" * 51 + "\n"
+            txt += f"# {stepname}\n"
+            txt += "=" * 51 + "\n"
+            for station, c in step.items():
+                x = format(c[0], fmt)
+                y = format(c[1], fmt)
+                z = format(c[2], fmt)
+                txt += f"{station:<6} {x} {y} {z}\n"
+
+            txt += "\n"
+
+        return txt.strip()

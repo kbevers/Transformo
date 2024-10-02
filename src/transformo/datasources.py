@@ -6,13 +6,30 @@ from __future__ import annotations
 
 import csv
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Protocol
 
 import numpy as np
 import pydantic
 
 from transformo import Coordinate, TranformoReaderValidationError, logger
-from transformo.typing import CoordinateMatrix, DataSourceLike
+from transformo.typing import CoordinateMatrix
+
+
+class DataSourceLike(Protocol):
+    """Protocol for TransformoReaders."""
+
+    type: Any
+    coordinates: list[Coordinate]
+
+    def __init__(self, coordinates: list[Coordinate] | None = None) -> None:
+        """..."""
+
+    def __add__(self, other) -> DataSourceLike:
+        """..."""
+
+    @property
+    def coordinate_matrix(self) -> CoordinateMatrix:
+        """..."""
 
 
 class DataSource(pydantic.BaseModel):
@@ -86,6 +103,10 @@ class DataSource(pydantic.BaseModel):
         return np.array(
             [c.vector for c in self.coordinates]  # pylint: disable=not-an-iterable
         )
+
+    @property
+    def stations(self) -> list[str]:
+        return [c.station for c in self.coordinates]
 
     def update_coordinates(self, coordinates: CoordinateMatrix) -> DataSource:
         """

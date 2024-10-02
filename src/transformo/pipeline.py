@@ -6,14 +6,14 @@ from __future__ import annotations
 
 from typing import Annotated, Union
 
-import numpy as np
 import pydantic
 import pydantic_yaml
 
 from transformo import TransformoError
-from transformo.datasources import DataSource
-from transformo.operators import Operator
-from transformo.typing import CoordinateMatrix, DataSourceLike, OperatorLike
+from transformo.datasources import DataSource, DataSourceLike
+from transformo.operators import Operator, OperatorLike
+from transformo.presenters import Presenter, PresenterLike
+from transformo.typing import CoordinateMatrix
 
 
 class TransformoPipeline(pydantic.BaseModel):
@@ -22,16 +22,21 @@ class TransformoPipeline(pydantic.BaseModel):
     source_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
     target_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
     operators: list[Annotated[Union[Operator.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
+    presenters: list[Annotated[Union[Presenter.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
 
     def __init__(
         self,
         source_data: list[DataSourceLike],
         target_data: list[DataSourceLike],
         operators: list[OperatorLike],
+        presenters: list[PresenterLike],
     ) -> None:
         """Set up for pipelines"""
         super().__init__(
-            source_data=source_data, target_data=target_data, operators=operators
+            source_data=source_data,
+            target_data=target_data,
+            operators=operators,
+            presenters=presenters,
         )
 
         def combine_datasources(sources=list[DataSource]) -> DataSource:
@@ -119,7 +124,8 @@ class TransformoPipeline(pydantic.BaseModel):
 
     def process(self) -> None:
         """
-        Process all operators in the pipeline.
+        Process all `Operator`s in the pipeline and pass the results to the
+        `Presenter`s for evaluation.
         """
         current_step_coordinates = self.source_coordinates
         for operator in self.operators:
@@ -138,3 +144,33 @@ class TransformoPipeline(pydantic.BaseModel):
             self._intermediate_results.append(current_step_datasource)
 
         self._intermediate_results.append(self._combined_target_data)
+
+        for presenter in self.presenters:
+            presenter.evaluate(operators=self.operators, results=self.results)
+
+    def results_as_text(self) -> str:
+        """
+        Return the results from the pipeline in clear text format,
+        as specified with the given `Presenter`s.
+        """
+        text = ""
+        for presenter in self.presenters:
+            text += f"{repr(presenter)}\n\n"
+            text += f"{presenter.as_text()}\n\n"
+
+        return text
+
+    def results_as_json(self) -> str:
+        """
+        Return the results from the pipeline in JSON format,
+        as specified with the given `Presenter`s.
+        """
+        return "{}"
+
+    def results_as_html(self) -> str:
+        """
+        Return the results from the pipeline in HTML format,
+        as specified with the given `Presenter`s.
+
+        """
+        return "<html><title>Transformo Results<title><body></body></html>"

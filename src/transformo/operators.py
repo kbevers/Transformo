@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Protocol
 
 import numpy as np
 import pydantic
@@ -36,6 +36,15 @@ def _float(f: float | None) -> float:
     if f is None:
         f = float("nan")
     return float(f)
+
+
+class OperatorLike(Protocol):
+    """Protocal for Transformo Operator classes."""
+
+    type: Any
+
+    def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
+        """Forward method of the Operator."""
 
 
 class Operator(pydantic.BaseModel):
@@ -80,6 +89,11 @@ class Operator(pydantic.BaseModel):
         super().__init__(name=name, **kwargs)
 
         self._transformation_parameters_given: bool = False
+
+    def __repr__(self) -> str:
+        """ """
+        params = ", ".join(f"{k}: {v}" for k, v in self.parameters.items())
+        return self.__class__.__name__ + f"({params})"
 
     @classmethod
     def get_subclasses(cls) -> Iterable[type[Operator]]:
@@ -262,7 +276,6 @@ class HelmertTranslation(Operator):
     z: Optional[float] = float("nan")
 
     def __init__(self, **kwargs) -> None:
-        """."""
         super().__init__(**kwargs)
 
         # if one or more parameter is given at instantiation time
@@ -284,6 +297,12 @@ class HelmertTranslation(Operator):
             self.z = 0.0
 
     def _proj_name(self) -> str:
+        if not self.parameters:
+            # In principle PROJ will accept a "+proj=helmert" string without
+            # parameters, but this will be slightly faster and communicate
+            # better that nothing is done
+            return "noop"
+
         return "helmert"
 
     def _parameter_dict(self) -> dict[str, ParameterValue]:
