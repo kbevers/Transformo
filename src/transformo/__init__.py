@@ -10,6 +10,8 @@ import numpy as np
 import pydantic
 from pydantic.dataclasses import dataclass
 
+__version__ = "0.1.0"
+
 
 # Define project specific expections
 class TransformoBaseException(Exception):

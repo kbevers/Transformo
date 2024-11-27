@@ -4,6 +4,7 @@ Transformo pipeline classes.
 
 from __future__ import annotations
 
+import textwrap
 from typing import Annotated, Union
 
 import pydantic
@@ -155,8 +156,12 @@ class TransformoPipeline(pydantic.BaseModel):
         """
         text = ""
         for presenter in self.presenters:
-            text += f"{repr(presenter)}\n\n"
-            text += f"{presenter.as_text()}\n\n"
+
+            title = repr(presenter)
+            body = textwrap.indent(presenter.as_text(), prefix="  ")
+
+            text += f"{title}\n\n"
+            text += f"{body}\n\n"
 
         return text
 

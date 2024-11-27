@@ -5,6 +5,7 @@ Transformo Presenter classes.
 from __future__ import annotations
 
 import json
+import textwrap
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Protocol
 

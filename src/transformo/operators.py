@@ -64,7 +64,7 @@ class Operator(pydantic.BaseModel):
     The abilities of a Operator is determined by the methods that enheriting classes
     implement. *All* Operator's must implement the `forward` method and they *can*
     implement the `estimate` and `inverse` methods. If only the `forward` method is
-    implemented
+    implemented ... ???
     """
 
     # Mypy and pydantic have conflicting needs:

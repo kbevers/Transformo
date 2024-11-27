@@ -209,4 +209,4 @@ def test_pipeline_results_as_text(files: dict) -> None:
     pipeline.process()
 
     print(pipeline.results_as_text())
-    assert True
+    assert False
