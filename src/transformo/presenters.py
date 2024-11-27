@@ -5,15 +5,29 @@ Transformo Presenter classes.
 from __future__ import annotations
 
 import json
-import textwrap
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Protocol
 
 import pydantic
+from py_markdown_table.markdown_table import markdown_table
 
-from transformo import Coordinate
 from transformo.datasources import DataSource, DataSourceLike
 from transformo.operators import Operator, OperatorLike
+
+
+def construct_markdown_table(header: list[str], rows: list[list[str]]) -> str:
+    """
+    .
+    """
+
+    data = [dict(zip(header, row)) for row in rows]
+
+    table = markdown_table(data)
+    table.set_params(
+        quote=False, padding_width=2, padding_weight="centerright", row_sep="markdown"
+    )
+
+    return table.get_markdown()
 
 
 class PresenterLike(Protocol):
@@ -87,10 +101,18 @@ class Presenter(pydantic.BaseModel):
         """
 
     @abstractmethod
-    def as_text(self) -> str:
+    def as_markdown(self) -> str:
         """
-        Present result in text format.
+        Present result in the Markdown text format.
         """
+
+    @property
+    def presenter_name(self) -> str:
+        """Name of the Presenter"""
+        if self.name:
+            return self.name
+
+        return self.type
 
 
 class DummyPresenter(Presenter):
@@ -111,11 +133,11 @@ class DummyPresenter(Presenter):
         """
         return "{}"
 
-    def as_text(self) -> str:
+    def as_markdown(self) -> str:
         """
-        Present result in text format.
+        Present result in the markdown text format.
         """
-        return ""
+        return "*This section intentionally left blank.*"
 
 
 class PROJPresenter(Presenter):
@@ -172,20 +194,25 @@ class PROJPresenter(Presenter):
         """
         return json.dumps(self._output)
 
-    def as_text(self) -> str:
+    def as_markdown(self) -> str:
         """Return PROJstring as text."""
         params = json.loads(self.as_json())
         txt = params["projstring"]
-        return txt.replace(" +step", "\n  +step").strip()
+        formatted_projstring = txt.replace(" +step", "\n  +step").strip()
+
+        markdown = f"""
+Transformation parameters given as a [PROJ](https://proj.org/) string.
+```
+{formatted_projstring}
+```
+""".strip()
+
+        return markdown
 
 
 class CoordinatePresenter(Presenter):
     """
     Present coordinates for all stages of a pipeline.
-
-    Possible future useful settings:
-        - Include timestamps
-
     """
 
     type: Literal["coordinate_presenter"] = "coordinate_presenter"
@@ -195,7 +222,7 @@ class CoordinatePresenter(Presenter):
         super().__init__(**kwargs)
 
         self._operator_titles: list[str] = []
-        self._steps: list[dict[str, list[float]]] = []
+        self._steps: list[dict[str, list[float | None]]] = []
 
     def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
         """
@@ -216,7 +243,7 @@ class CoordinatePresenter(Presenter):
         for ds in results:
             data = {}
             for c in ds.coordinates:
-                data[c.station] = [c.x, c.y, c.z]
+                data[c.station] = [c.x, c.y, c.z, c.t]
             steps.append(data)
 
         self._steps = steps
@@ -230,10 +257,13 @@ class CoordinatePresenter(Presenter):
     def as_json(self) -> str:
         return json.dumps(self._steps)
 
-    def as_text(self) -> str:
-        fmt = ">14.5f"
+    def as_markdown(self) -> str:
+        fmt = ".4f"
+        header = ["Station", "x", "y", "z", "t"]
 
-        txt = ""
+        text = "Source and target coordinates as well as "
+        text += "intermediate results shown in tabular form.\n\n"
+
         for i, step in enumerate(self._steps):
             if i == 0:
                 stepname = "Source coordinates"
@@ -242,15 +272,14 @@ class CoordinatePresenter(Presenter):
             else:
                 stepname = "Target coordinates"
 
-            txt += "=" * 51 + "\n"
-            txt += f"# {stepname}\n"
-            txt += "=" * 51 + "\n"
-            for station, c in step.items():
-                x = format(c[0], fmt)
-                y = format(c[1], fmt)
-                z = format(c[2], fmt)
-                txt += f"{station:<6} {x} {y} {z}\n"
+            text += f"### {stepname}\n\n"
+            rows = []
+            for station, coordinate in step.items():
+                row = [station, *[format(c, fmt) for c in coordinate]]
+                rows.append(row)
 
-            txt += "\n"
+            table = construct_markdown_table(header, rows)
 
-        return txt.strip()
+            text += f"{table}\n\n"
+
+        return text.rstrip()

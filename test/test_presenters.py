@@ -5,7 +5,12 @@ import pytest
 
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.operators import DummyOperator, HelmertTranslation, Operator
-from transformo.presenters import CoordinatePresenter, Presenter, PROJPresenter
+from transformo.presenters import (
+    CoordinatePresenter,
+    DummyPresenter,
+    Presenter,
+    PROJPresenter,
+)
 
 
 def test_base_presenter():
@@ -34,7 +39,7 @@ def test_base_presenter():
 
             return "{}"
 
-        def as_text(self) -> str:
+        def as_markdown(self) -> str:
             """Returns the simplest string possible."""
             return ""
 
@@ -50,6 +55,17 @@ def test_base_presenter():
     subclasses = Presenter.get_subclasses()
     assert Presenter in subclasses
     assert ChildPresenter in subclasses
+
+
+def test_presenter_name_property():
+    """
+    Test the Presenter.presenter_name property.
+    """
+    presenter_without_given_name = DummyPresenter()
+    assert presenter_without_given_name.presenter_name == "dummy_presenter"
+
+    presenter_with_name = DummyPresenter(name="The dumb presenter")
+    assert presenter_with_name.presenter_name == "The dumb presenter"
 
 
 def test_proj_presenter():
@@ -83,11 +99,17 @@ def test_proj_presenter():
         == f'{{"projstring": "{expected_pipeline}"}}'
     )
 
-    expected_pipeline = """+proj=pipeline
+    expected_pipeline = """
+Transformation parameters given as a [PROJ](https://proj.org/) string.
+```
++proj=pipeline
   +step +proj=helmert +y=432.52
-  +step +proj=helmert +x=3.42 +y=534.533 +z=1234.5678"""
+  +step +proj=helmert +x=3.42 +y=534.533 +z=1234.5678
+```
+""".strip()
 
-    assert presenter_with_several_operators.as_text() == expected_pipeline
+    print(presenter_with_several_operators.as_markdown())
+    assert presenter_with_several_operators.as_markdown() == expected_pipeline
 
 
 def test_coordinate_presenter(files):
@@ -111,32 +133,39 @@ def test_coordinate_presenter(files):
     assert results[1]["FYHA"][2] == ds2.coordinates[3].z
 
     # Really just here to detect regressions
-    expected_text = """===================================================
-# Source coordinates
-===================================================
-BUDP    3513637.97424   778956.66526  5248216.59809
-ESBC    3582104.73000   532590.21590  5232755.16250
-FER5    3491111.17695   497995.12319  5296843.05030
-FYHA    3611639.48454   635936.65951  5201015.01371
-GESR    3625387.02679   765504.41925  5174102.86430
-HABY    3507446.67528   704379.43463  5262740.43379
-HIRS    3374902.76767   593115.83399  5361509.67641
-SMID    3557910.95821   599176.95118  5242066.61051
-SULD    3446393.93988   591713.40409  5316383.61894
-TEJH    3522394.91330   933244.95952  5217231.61642
+    expected_text = """
+Source and target coordinates as well as intermediate results shown in tabular form.
 
-===================================================
-# Target coordinates
-===================================================
-BUDP    3513638.56046   778956.18389  5248216.24817
-ESBC    3582105.29700   532589.72930  5232754.80840
-FER5    3491111.73600   497994.64800  5296842.69400
-FYHA    3611640.06540   635936.17060  5201014.66830
-GESR    3625387.61940   765503.92660  5174102.51330
-HABY    3507447.25600   704378.95600  5262740.07900
-HIRS    3374903.32690   593115.36900  5361509.30240
-SMID    3557911.52730   599176.46810  5242066.25540
-SULD    3446394.50549   591712.93860  5316383.26730
-TEJH    3522395.52810   933244.47970  5217231.27310"""
+### Source coordinates
 
-    assert expected_text == p.as_text()
+|Station|      x       |      y      |      z       |     t     |
+|-------|--------------|-------------|--------------|-----------|
+| BUDP  | 3513637.9742 | 778956.6653 | 5248216.5981 | 2022.9301 |
+| ESBC  | 3582104.7300 | 532590.2159 | 5232755.1625 | 2022.9301 |
+| FER5  | 3491111.1770 | 497995.1232 | 5296843.0503 | 2022.9301 |
+| FYHA  | 3611639.4845 | 635936.6595 | 5201015.0137 | 2022.9301 |
+| GESR  | 3625387.0268 | 765504.4193 | 5174102.8643 | 2022.9301 |
+| HABY  | 3507446.6753 | 704379.4346 | 5262740.4338 | 2022.9301 |
+| HIRS  | 3374902.7677 | 593115.8340 | 5361509.6764 | 2022.9301 |
+| SMID  | 3557910.9582 | 599176.9512 | 5242066.6105 | 2022.9301 |
+| SULD  | 3446393.9399 | 591713.4041 | 5316383.6189 | 2022.9301 |
+| TEJH  | 3522394.9133 | 933244.9595 | 5217231.6164 | 2022.9301 |
+
+### Target coordinates
+
+|Station|      x       |      y      |      z       |     t     |
+|-------|--------------|-------------|--------------|-----------|
+| BUDP  | 3513638.5605 | 778956.1839 | 5248216.2482 | 2018.2400 |
+| ESBC  | 3582105.2970 | 532589.7293 | 5232754.8084 | 2018.2400 |
+| FER5  | 3491111.7360 | 497994.6480 | 5296842.6940 | 2018.2400 |
+| FYHA  | 3611640.0654 | 635936.1706 | 5201014.6683 | 2018.2400 |
+| GESR  | 3625387.6194 | 765503.9266 | 5174102.5133 | 2018.2400 |
+| HABY  | 3507447.2560 | 704378.9560 | 5262740.0790 | 2018.2400 |
+| HIRS  | 3374903.3269 | 593115.3690 | 5361509.3024 | 2018.2400 |
+| SMID  | 3557911.5273 | 599176.4681 | 5242066.2554 | 2018.2400 |
+| SULD  | 3446394.5055 | 591712.9386 | 5316383.2673 | 2018.2400 |
+| TEJH  | 3522395.5281 | 933244.4797 | 5217231.2731 | 2018.2400 |
+""".strip()
+
+    print(p.as_markdown())
+    assert expected_text == p.as_markdown()

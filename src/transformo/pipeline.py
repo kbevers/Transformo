@@ -4,12 +4,13 @@ Transformo pipeline classes.
 
 from __future__ import annotations
 
-import textwrap
+from datetime import datetime
 from typing import Annotated, Union
 
 import pydantic
 import pydantic_yaml
 
+import transformo
 from transformo import TransformoError
 from transformo.datasources import DataSource, DataSourceLike
 from transformo.operators import Operator, OperatorLike
@@ -53,24 +54,11 @@ class TransformoPipeline(pydantic.BaseModel):
         self._intermediate_results: list[DataSource] = [self._combined_source_data]
 
     @classmethod
-    def from_json(cls, json: str | bytes | bytearray) -> TransformoPipeline:
-        """
-        Serialize a pipeline from JSON.
-        """
-        return cls.model_validate_json(json)
-
-    @classmethod
     def from_yaml(cls, yaml: str | bytes | bytearray) -> TransformoPipeline:
         """
         Serialize a pipeline from YAML.
         """
         return pydantic_yaml.parse_yaml_raw_as(cls, yaml)
-
-    def to_json(self) -> str:
-        """
-        Return the pipeline setup as JSON.
-        """
-        return self.model_dump_json(indent=2)
 
     def to_yaml(self) -> str:
         """
@@ -149,21 +137,24 @@ class TransformoPipeline(pydantic.BaseModel):
         for presenter in self.presenters:
             presenter.evaluate(operators=self.operators, results=self.results)
 
-    def results_as_text(self) -> str:
+    def results_as_markdown(self) -> str:
         """
-        Return the results from the pipeline in clear text format,
+        Return the results from the pipeline in markdown format,
         as specified with the given `Presenter`s.
         """
-        text = ""
+        text = f"""
+# Transformo Results
+*Created with Transformo version {transformo.__version__}, {datetime.now()}*.\n
+""".lstrip()
+
         for presenter in self.presenters:
+            section_header = presenter.presenter_name
+            body = presenter.as_markdown()
 
-            title = repr(presenter)
-            body = textwrap.indent(presenter.as_text(), prefix="  ")
-
-            text += f"{title}\n\n"
+            text += f"## {section_header}\n\n"
             text += f"{body}\n\n"
 
-        return text
+        return text.rstrip()
 
     def results_as_json(self) -> str:
         """
@@ -171,11 +162,3 @@ class TransformoPipeline(pydantic.BaseModel):
         as specified with the given `Presenter`s.
         """
         return "{}"
-
-    def results_as_html(self) -> str:
-        """
-        Return the results from the pipeline in HTML format,
-        as specified with the given `Presenter`s.
-
-        """
-        return "<html><title>Transformo Results<title><body></body></html>"

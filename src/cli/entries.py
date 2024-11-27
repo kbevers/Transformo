@@ -3,6 +3,8 @@ Entry points for the Transformo CLI
 """
 
 import click
+from rich.console import Console
+from rich.markdown import Markdown
 
 import transformo
 import transformo.datasources
@@ -25,4 +27,7 @@ def main(configuration_file: click.Path) -> None:
         pipeline = transformo.pipeline.TransformoPipeline.from_yaml(yaml.read())
 
     pipeline.process()
-    print(pipeline.results_as_text())
+
+    console = Console()
+    markdown = Markdown(pipeline.results_as_markdown(), justify="left")
+    console.print(markdown)

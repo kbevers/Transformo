@@ -68,9 +68,9 @@ class DataSource(pydantic.BaseModel):
         """
         Add two `DataSource`s.
 
-        Effectively the `coordinates` lists in the two `DataSource`s are joined together.
-        The returned object is a generic `DataSource`, no matter what subclass of `DataSource`
-        the two sources are created from.
+        Effectively the `coordinates` lists in the two `DataSource`s are
+        joined together. The returned object is a generic `DataSource`,
+        no matter what subclass of `DataSource` the two sources are created from.
         """
         new_coordinate_list = self.coordinates + other.coordinates
         return DataSource(coordinates=new_coordinate_list)
@@ -106,6 +106,9 @@ class DataSource(pydantic.BaseModel):
 
     @property
     def stations(self) -> list[str]:
+        """
+        Get list of stations.
+        """
         return [c.station for c in self.coordinates]
 
     def update_coordinates(self, coordinates: CoordinateMatrix) -> DataSource:

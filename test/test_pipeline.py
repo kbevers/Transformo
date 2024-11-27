@@ -2,7 +2,6 @@
 Test the pipeline class.
 """
 
-from pathlib import Path
 from typing import Callable, Dict
 
 from transformo import Coordinate
@@ -46,37 +45,6 @@ def test_pipeline(datasource_factory: Callable) -> None:
         pipeline.target_coordinates[19, 2]
         == pipeline.target_data[1].coordinates[9].vector[2]
     )
-
-
-def test_pipeline_json_serilization(files: dict) -> None:
-    """
-    Test JSON serilization of a TransformoPipeline.
-    """
-    pipeline = TransformoPipeline(
-        source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
-        target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
-        operators=[DummyOperator(), DummyOperator()],
-        presenters=[DummyPresenter(), DummyPresenter()],
-    )
-
-    serialized_json = pipeline.to_json()
-    print(serialized_json)
-
-    new_pipeline = TransformoPipeline.from_json(json=serialized_json)
-
-    # Check that the same coordinates are present in the two pipelines
-    assert (
-        new_pipeline.source_data[0].coordinates == pipeline.source_data[0].coordinates
-    )
-    assert (
-        new_pipeline.target_data[0].coordinates == pipeline.target_data[0].coordinates
-    )
-
-    # Check that the filenames are the same before and after serilization.
-    # The types differ since the new pipeline contains a string versus the original
-    # that has a Path, but they should refer to the same file
-    assert new_pipeline.source_data[0].filename == str(pipeline.source_data[0].filename)
-    assert new_pipeline.target_data[0].filename == str(pipeline.target_data[0].filename)
 
 
 def test_pipeline_yaml_serilization(files: dict) -> None:
@@ -195,9 +163,11 @@ def test_pipeline_access() -> None:
     assert results[3].coordinates[0].z - results[2].coordinates[0].z == 0
 
 
-def test_pipeline_results_as_text(files: dict) -> None:
+def test_pipeline_results_as_markdown(files: dict) -> None:
     """
-    Test `results_as_text` method.
+    Test `results_as_markdown` method.
+
+    Not the best test in the world, but will catch some regressions
     """
     pipeline = TransformoPipeline(
         source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
@@ -208,5 +178,11 @@ def test_pipeline_results_as_text(files: dict) -> None:
 
     pipeline.process()
 
-    print(pipeline.results_as_text())
-    assert False
+    markdown = pipeline.results_as_markdown()
+    print(markdown)
+
+    assert markdown.splitlines()[0] == "# Transformo Results"
+    assert markdown.splitlines()[1].startswith("*Created with Transformo version")
+    assert markdown.splitlines()[3] == "## proj_presenter"
+    assert markdown.splitlines()[16].startswith("|Station|      x       |")
+    assert markdown.splitlines()[29].startswith("### Step 1: HelmertTranslation(x")
