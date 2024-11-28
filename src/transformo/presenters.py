@@ -17,9 +17,19 @@ from transformo.operators import Operator, OperatorLike
 
 def construct_markdown_table(header: list[str], rows: list[list[str]]) -> str:
     """
-    .
-    """
+    Present data in tabular form using the Markdown format.
 
+    The number of elements in the header must be equal to the number of
+    elements in the individual rows.
+
+    Data is expected as strings. Often numbers will be presented in a
+    table. The responsibility of how data is formatted is left to the
+    caller.
+
+    Parameters:
+        header: Titles for each column in the table
+        rows:   Values of cells in table.
+    """
     data = [dict(zip(header, row)) for row in rows]
 
     table = markdown_table(data)
@@ -39,13 +49,13 @@ class PresenterLike(Protocol):
         self, operators: list[OperatorLike], results: list[DataSourceLike]
     ) -> None:
         """
-        Parse information from operators and result datasources and store in
+        Store parsed information from operators and resulting datasources in
         internal data container for further processing.
         """
 
 
 class Presenter(pydantic.BaseModel):
-    """Base Result class."""
+    """Base Presenter class."""
 
     # Mypy and pydantic have conflicting needs:
     # Pydantic won't work unless the type is a stric Literal
@@ -57,7 +67,7 @@ class Presenter(pydantic.BaseModel):
         type: Literal["presenter"] = "presenter"
 
     # User-specified name of the Presenter, for easy referencing
-    # when overriding settings
+    # when overriding settings etc.
     name: str | None = None
 
     def __init__(
@@ -71,13 +81,13 @@ class Presenter(pydantic.BaseModel):
     @classmethod
     def get_subclasses(cls) -> Iterable[type[Presenter]]:
         """
-        Return a tuple of all known subclasses to `Result`.
+        Return a tuple of all known subclasses to `Presenter`.
 
         This classmethod supports pydantic in dynamically creating a valid model
-        for the Pipeline class when serialising the pipeline from an external
+        for the `Pipeline` class when serialising the pipeline from an external
         configuration file.
         """
-        # the parent class "result" is needed in the list as well, since
+        # the parent class "presenter" is needed in the list as well, since
         # DataSource's can be instantiated as well as classes inheriting from it
         subclasses = [Presenter] + list(cls.__subclasses__())
 
@@ -90,7 +100,7 @@ class Presenter(pydantic.BaseModel):
     @abstractmethod
     def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
         """
-        Evalute information from operators and result datasources and store in
+        Evaluate information from operators and resulting datasources and store in
         internal data container for use in program output.
         """
 
@@ -212,7 +222,7 @@ Transformation parameters given as a [PROJ](https://proj.org/) string.
 
 class CoordinatePresenter(Presenter):
     """
-    Present coordinates for all stages of a pipeline.
+    Create lists of coordinates for all stages of a pipeline.
     """
 
     type: Literal["coordinate_presenter"] = "coordinate_presenter"
@@ -227,8 +237,6 @@ class CoordinatePresenter(Presenter):
     def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
         """
         Parse coordinates from `results`.
-
-        Ignores contents of `operators`.
 
         Assumptions about DataSources in `results`:
 

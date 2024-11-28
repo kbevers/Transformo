@@ -1,5 +1,5 @@
 """
-Transformo reader classes.
+Transformo DataSource classes.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ class DataSource(pydantic.BaseModel):
         type: Literal["datasource"] = "datasource"
 
     # User-specified name of the DataSource, for easy referencing
-    # when overriding settings
+    # when overriding settings etc.
     name: str | None = None
 
     # coordinates are not included in pipeline serialization

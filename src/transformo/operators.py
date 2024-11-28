@@ -50,20 +50,21 @@ class Operator(pydantic.BaseModel):
     """
     Base Operator class.
 
-    Operators are essential building blocks for the TransformoPipeline. All operators
+    Operators are essential building blocks for the Pipeline. All operators
     have the ability to manipulate coordinates, generally in the sense of a geodetic
     transformation. In addition operators *can* implement a method to derive
     parameters for said coordinate operation. Most Operators do, but not all.
 
     So, Operators have two principal modes of operation:
 
-        1. Coordinate operations, as defined in the ISO19111 terminology
+        1. Coordinate operations, as defined in the ISO 19111 terminology
         2. Estimating parameters for the coordinate operations
 
-    The abilities of a Operator is determined by the methods that enheriting classes
+    The abilities of a Operator are determined by the methods that enheriting classes
     implement. *All* Operator's must implement the `forward` method and they *can*
     implement the `estimate` and `inverse` methods. If only the `forward` method is
-    implemented ... ???
+    implemented the operator will exist as a coordinate operation that can't
+    estimate parameters.
     """
 
     # Mypy and pydantic have conflicting needs:
@@ -76,7 +77,7 @@ class Operator(pydantic.BaseModel):
         type: Literal["operator"] = "operator"
 
     # User-specified name of the Operator, for easy referencing
-    # when overriding settings
+    # when overriding settings etc.
     name: str | None = None
 
     def __init__(
@@ -115,11 +116,11 @@ class Operator(pydantic.BaseModel):
 
     @abstractmethod
     def _proj_name(self) -> str:
-        """Help for `proj_operation_name` property."""
+        """Helper for the `proj_operation_name` property."""
 
     @abstractmethod
     def _parameter_dict(self) -> dict[str, ParameterValue]:
-        """Helper for `parameters` property."""
+        """Helper for the `parameters` property."""
 
     @property
     def can_estimate(self) -> bool:
@@ -194,7 +195,7 @@ class Operator(pydantic.BaseModel):
         """
         Inverse method of the Operator.
 
-        Abstract. Needs to be implemented by inheriting classes.
+        Abstract. Can be implemented by inheriting classes.
         """
         raise NotImplementedError
 
@@ -208,7 +209,7 @@ class Operator(pydantic.BaseModel):
         """
         Estimate parameters.
 
-        For the base Operator class this method does nothing.
+        Abstract. Can be implemented by inheriting classes.
         """
         raise NotImplementedError
 
@@ -216,6 +217,8 @@ class Operator(pydantic.BaseModel):
 class DummyOperator(Operator):
     """
     This Operator is a dumb dumb.
+
+    Its primary function is to be useful in testing scenarios.
     """
 
     type: Literal["dummy_operator"] = "dummy_operator"
@@ -249,7 +252,7 @@ class DummyOperator(Operator):
         Inverse method of the Transformation.
 
         It simply returns the same coordinates as it receives.
-        That's how dumb this operation is!
+        That really is how dumb this operation is!
         """
         return coordinates
 

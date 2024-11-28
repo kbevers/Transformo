@@ -2,27 +2,28 @@
 Test the pipeline class.
 """
 
+import json
 from typing import Callable, Dict
 
 from transformo import Coordinate
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.operators import DummyOperator, HelmertTranslation
-from transformo.pipeline import TransformoPipeline
+from transformo.pipeline import Pipeline
 from transformo.presenters import CoordinatePresenter, DummyPresenter, PROJPresenter
 
 
 def test_pipeline(datasource_factory: Callable) -> None:
     """
-    Test basic instantiation of a TransformoPipeline.
+    Test basic instantiation of a Pipeline.
     """
-    pipeline = TransformoPipeline(
+    pipeline = Pipeline(
         source_data=[datasource_factory(), datasource_factory()],
         target_data=[datasource_factory(), datasource_factory()],
         operators=[DummyOperator(), DummyOperator()],
         presenters=[DummyPresenter(), DummyPresenter()],
     )
 
-    assert isinstance(pipeline, TransformoPipeline)
+    assert isinstance(pipeline, Pipeline)
 
     # Test that source/target_coordinates properties are working as intended
     n_coordinates = 2 * 10  # 2 datasources with 10 coordinates each
@@ -49,9 +50,9 @@ def test_pipeline(datasource_factory: Callable) -> None:
 
 def test_pipeline_yaml_serilization(files: dict) -> None:
     """
-    Test YAML serilization of a TransformoPipeline.
+    Test YAML serilization of a Pipeline.
     """
-    pipeline = TransformoPipeline(
+    pipeline = Pipeline(
         source_data=[
             CsvDataSource(name="itrf2024", filename=files["dk_cors_itrf2014.csv"])
         ],
@@ -65,7 +66,7 @@ def test_pipeline_yaml_serilization(files: dict) -> None:
     serialized_yaml = pipeline.to_yaml()
     print(serialized_yaml)
 
-    new_pipeline = TransformoPipeline.from_yaml(yaml=serialized_yaml)
+    new_pipeline = Pipeline.from_yaml(yaml=serialized_yaml)
 
     # Check that the same coordinates are present in the two pipelines
     assert (
@@ -101,7 +102,7 @@ def test_pipeline_estimation_using_helmert_translation() -> None:
     helmert_transformation = HelmertTranslation(y=150)
     helmert_estimation = HelmertTranslation()
 
-    pipeline = TransformoPipeline(
+    pipeline = Pipeline(
         source_data=[source],
         target_data=[target],
         operators=[helmert_transformation, helmert_estimation],
@@ -137,7 +138,7 @@ def test_pipeline_access() -> None:
     helmert_transformation = HelmertTranslation(y=150)
     helmert_estimation = HelmertTranslation()
 
-    pipeline = TransformoPipeline(
+    pipeline = Pipeline(
         source_data=[source],
         target_data=[target],
         operators=[helmert_transformation, helmert_estimation],
@@ -169,7 +170,7 @@ def test_pipeline_results_as_markdown(files: dict) -> None:
 
     Not the best test in the world, but will catch some regressions
     """
-    pipeline = TransformoPipeline(
+    pipeline = Pipeline(
         source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
         target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
         operators=[HelmertTranslation()],
@@ -186,3 +187,28 @@ def test_pipeline_results_as_markdown(files: dict) -> None:
     assert markdown.splitlines()[3] == "## proj_presenter"
     assert markdown.splitlines()[16].startswith("|Station|      x       |")
     assert markdown.splitlines()[29].startswith("### Step 1: HelmertTranslation(x")
+
+
+def test_pipeline_results_as_json(files: dict) -> None:
+    """
+    Test `results_as_json` method.
+
+    Not the best test in the world, but will catch some regressions
+    """
+    pipeline = Pipeline(
+        source_data=[CsvDataSource(filename=files["dk_cors_itrf2014.csv"])],
+        target_data=[CsvDataSource(filename=files["dk_cors_etrs89.csv"])],
+        operators=[HelmertTranslation()],
+        presenters=[
+            PROJPresenter(name="PROJ"),
+            CoordinatePresenter(name="Coordinates"),
+        ],
+    )
+
+    pipeline.process()
+
+    jsondata = pipeline.results_as_json()
+    data = json.loads(jsondata)
+
+    assert "PROJ" in data.keys()
+    assert "Coordinates" in data.keys()

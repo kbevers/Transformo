@@ -1,5 +1,5 @@
 """
-Entry points for the Transformo CLI
+Entry points for the Transformo CLI.
 """
 
 import click
@@ -8,7 +8,7 @@ from rich.markdown import Markdown
 
 import transformo
 import transformo.datasources
-import transformo.pipeline
+from transformo.pipeline import Pipeline
 
 
 @click.command()
@@ -24,7 +24,7 @@ def main(configuration_file: click.Path) -> None:
     This application is under development and can be expected to change in the future.
     """
     with open(configuration_file, "r", encoding="utf-8") as yaml:
-        pipeline = transformo.pipeline.TransformoPipeline.from_yaml(yaml.read())
+        pipeline = Pipeline.from_yaml(yaml.read())
 
     pipeline.process()
 

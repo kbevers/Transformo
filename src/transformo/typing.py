@@ -1,4 +1,4 @@
-"""Protocols for Transformo"""
+"""Type annotations for Transformo"""
 
 from __future__ import annotations
 

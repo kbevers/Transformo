@@ -3,7 +3,7 @@ Test built-in datasources.
 """
 
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -67,7 +67,7 @@ def test_datasource_update_coordinates(datasource: DataSource) -> None:
         datasource.update_coordinates(too_many_coordiantes)
 
 
-def test_csvdatasource(files: Dict[str, Path]) -> None:
+def test_csvdatasource(files: dict[str, Path]) -> None:
     """
     Test the CsvReader
     """

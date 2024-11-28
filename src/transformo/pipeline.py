@@ -4,6 +4,7 @@ Transformo pipeline classes.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Annotated, Union
 
@@ -17,7 +18,7 @@ from transformo.presenters import Presenter, PresenterLike
 from transformo.typing import CoordinateMatrix
 
 
-class TransformoPipeline(pydantic.BaseModel):
+class Pipeline(pydantic.BaseModel):
     """The backbone of Transformo"""
 
     source_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
@@ -40,20 +41,14 @@ class TransformoPipeline(pydantic.BaseModel):
             presenters=presenters,
         )
 
-        def combine_datasources(sources=list[DataSource]) -> DataSource:
-            combined_datasource = sources[0]
-            for source in sources[1:]:
-                combined_datasource += source
-            return combined_datasource
-
         # set up combined datasources for both source and target data
-        self._combined_source_data = combine_datasources(self.source_data)
-        self._combined_target_data = combine_datasources(self.target_data)
+        self._combined_source_data = sum(self.source_data, DataSource(None))
+        self._combined_target_data = sum(self.target_data, DataSource(None))
 
         self._intermediate_results: list[DataSource] = [self._combined_source_data]
 
     @classmethod
-    def from_yaml(cls, yaml: str | bytes | bytearray) -> TransformoPipeline:
+    def from_yaml(cls, yaml: str | bytes | bytearray) -> Pipeline:
         """
         Serialize a pipeline from YAML.
         """
@@ -96,7 +91,7 @@ class TransformoPipeline(pydantic.BaseModel):
     @property
     def source_coordinates(self) -> CoordinateMatrix:
         """
-        The combined set of source coordinates.
+        The combined set of source coordinates in matrix form.
         """
         combined_datasource = self.source_data[0]
         for datasource in self.source_data[1:]:
@@ -107,7 +102,7 @@ class TransformoPipeline(pydantic.BaseModel):
     @property
     def target_coordinates(self) -> CoordinateMatrix:
         """
-        The combined set of target coordinates.
+        The combined set of target coordinates in matrix form.
         """
         combined_datasource = self.target_data[0]
         for datasource in self.target_data[1:]:
@@ -164,5 +159,11 @@ class TransformoPipeline(pydantic.BaseModel):
         """
         Return the results from the pipeline in JSON format,
         as specified with the given `Presenter`s.
+
+        Each `Presenter`
         """
-        return "{}"
+        # There's a bit of back and forth between JSON representations here. It's
+        # not particularly efficient but it is easy and it allows the individual
+        # presentations to return a JSON string outside the context of a `Pipeline`.
+        data = {p.presenter_name: json.loads(p.as_json()) for p in self.presenters}
+        return json.dumps(data)
