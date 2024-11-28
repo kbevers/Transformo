@@ -7,7 +7,6 @@ from typing import Literal
 import numpy as np
 import pytest
 
-from transformo import TransformoNotImplemented
 from transformo.operators import DummyOperator, HelmertTranslation, Operator
 from transformo.typing import CoordinateMatrix
 
@@ -19,7 +18,7 @@ def test_base_operator(source_coordinates):
     It has abstract methods so we shouldn't be able to instantiate it
     but that can be circumvented by creating a child that implements the
     abstract methods. Additionally, the "soft" abstract methods `inverse()`
-    and `estimate()` checked to see if they raise `TransformoNotImplemented`.
+    and `estimate()` checked to see if they raise `NotImplementedError`.
     """
 
     class ChildOperator(Operator):
@@ -46,10 +45,10 @@ def test_base_operator(source_coordinates):
     assert isinstance(operator, Operator)
     assert isinstance(operator, ChildOperator)
 
-    with pytest.raises(TransformoNotImplemented):
+    with pytest.raises(NotImplementedError):
         operator.inverse(source_coordinates)
 
-    with pytest.raises(TransformoNotImplemented):
+    with pytest.raises(NotImplementedError):
         operator.estimate(source_coordinates, source_coordinates, None, None)
 
     # Let's check that children of Operator is registered properly in the

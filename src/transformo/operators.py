@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Protocol
 import numpy as np
 import pydantic
 
-from transformo import TransformoNotImplemented
 from transformo.typing import CoordinateMatrix, ParameterValue, Vector
 
 
@@ -149,7 +148,7 @@ class Operator(pydantic.BaseModel):
         zero_matrix = np.zeros(shape=(4, 3))
         try:
             self.estimate(zero_matrix, zero_matrix, zero_matrix, zero_matrix)
-        except TransformoNotImplemented:
+        except NotImplementedError:
             return False
 
         return True
@@ -197,7 +196,7 @@ class Operator(pydantic.BaseModel):
 
         Abstract. Needs to be implemented by inheriting classes.
         """
-        raise TransformoNotImplemented
+        raise NotImplementedError
 
     def estimate(
         self,
@@ -211,7 +210,7 @@ class Operator(pydantic.BaseModel):
 
         For the base Operator class this method does nothing.
         """
-        raise TransformoNotImplemented
+        raise NotImplementedError
 
 
 class DummyOperator(Operator):

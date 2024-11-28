@@ -13,33 +13,6 @@ from pydantic.dataclasses import dataclass
 __version__ = "0.1.0"
 
 
-# Define project specific expections
-class TransformoBaseException(Exception):
-    """Base exception for Transformo"""
-
-
-class TransformoError(TransformoBaseException):
-    """Thown when a non-distinct error occurs."""
-
-
-class TransformoNotImplemented(TransformoBaseException):
-    """
-    This is thrown when a "soft abstract" method is not implemented.
-    """
-
-
-class TransformoReaderError(TransformoBaseException):
-    """Transformo Reader error"""
-
-
-class TranformoReaderValidationError(TransformoBaseException):
-    """Transformo Reader validation error"""
-
-
-class TransformoParametersInvalidException(TransformoBaseException):
-    """Parameters not initialized correctly."""
-
-
 # Logging
 console_handler = logging.StreamHandler()
 logger = logging.getLogger(__name__)

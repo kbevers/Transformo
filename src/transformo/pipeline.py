@@ -11,7 +11,6 @@ import pydantic
 import pydantic_yaml
 
 import transformo
-from transformo import TransformoError
 from transformo.datasources import DataSource, DataSourceLike
 from transformo.operators import Operator, OperatorLike
 from transformo.presenters import Presenter, PresenterLike
@@ -83,10 +82,15 @@ class TransformoPipeline(pydantic.BaseModel):
     @property
     def results(self) -> list[DataSource]:
         """
-        ...
+        Return coordinate results, including intermediate steps.
+
+        If the pipeline hasn't been processed before calling this method,
+        it will be done before returning the results.
+
+        TODO: Think of a better name.
         """
         if len(self._intermediate_results) != len(self.operators) + 2:
-            raise TransformoError("Pipeline has not been processed yet")
+            self.process()
         return self._intermediate_results
 
     @property

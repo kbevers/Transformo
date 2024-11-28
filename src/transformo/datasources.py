@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Protocol
 import numpy as np
 import pydantic
 
-from transformo import Coordinate, TranformoReaderValidationError, logger
+from transformo import Coordinate, logger
 from transformo.typing import CoordinateMatrix
 
 
 class DataSourceLike(Protocol):
-    """Protocol for TransformoReaders."""
+    """Protocol for DataSources."""
 
     type: Any
     coordinates: list[Coordinate]
@@ -176,9 +176,7 @@ class CsvDataSource(DataSource):
                 # if we get a ValidationError in the first row we've
                 # probably met a header
                 logger.error(exception)
-                raise TranformoReaderValidationError(
-                    "CsvDataSource validation error"
-                ) from exception
+                raise ValueError("CsvDataSource validation error") from exception
 
         for coordinate in self.coordinates:
             logger.info(coordinate)
