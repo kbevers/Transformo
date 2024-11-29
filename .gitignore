@@ -115,3 +115,10 @@ venv.bak/
 # Visual Studio code
 *.code-workspace
 .vscode/settings.json
+
+
+# Transformo specific ignores
+*.html
+*.pdf
+*.png
+notes.md
