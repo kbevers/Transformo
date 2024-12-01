@@ -28,6 +28,12 @@ logger = logging.getLogger("transformo")
 @click.version_option(transformo.__version__)
 @click.argument("configuration-file", type=click.Path(exists=True, path_type=Path))
 @click.option(
+    "--report-in-terminal",
+    is_flag=True,
+    default=False,
+    help="Print report directly to the terminal.",
+)
+@click.option(
     "--markdown",
     is_flag=True,
     default=False,
@@ -49,10 +55,15 @@ logger = logging.getLogger("transformo")
     "--out-dir",
     default="transformo_results",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    help="Directory where generated files are placed. Defaults to `transformo_result` placed in the current working directory.",
+    help="Directory where generated files are placed. Defaults to `transformo_results` placed in the current working directory.",
 )
 def main(
-    configuration_file: click.Path, markdown: bool, html: bool, pdf: bool, out_dir: Path
+    configuration_file: click.Path,
+    report_in_terminal: bool,
+    markdown: bool,
+    html: bool,
+    pdf: bool,
+    out_dir: Path,
 ) -> None:
     """
     The front door of Transformo.
@@ -73,11 +84,14 @@ def main(
     markdown_results = pipeline.results_as_markdown()
 
     # output to terminal
-    console = Console()
-    console.print(Markdown(markdown_results, justify="left"))
+    if report_in_terminal:
+        console = Console()
+        console.print(Markdown(markdown_results, justify="left"))
 
     # we end the program here if there's no output files to write
     if not (markdown or html or pdf):
+        if not report_in_terminal:
+            logger.warning("Pipeline processed but results not shown or saved to disk")
         raise SystemExit
 
     # output to filesystem
