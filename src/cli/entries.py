@@ -24,9 +24,28 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pandoc")
 logger = logging.getLogger("transformo")
 
 
+def set_logging_level(verbosity: int) -> None:
+    """Set the logging level"""
+    logger.setLevel(logging.ERROR)
+    if verbosity:
+        if verbosity == 1:
+            logger.setLevel(logging.WARNING)
+        if verbosity == 2:
+            logger.setLevel(logging.INFO)
+        if verbosity >= 3:
+            logger.setLevel(logging.DEBUG)
+
+
 @click.command()
 @click.version_option(transformo.__version__)
 @click.argument("configuration-file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "-v",
+    "--verbose",
+    "verbosity",
+    count=True,
+    help="Be verbose. Add multiple times to increase verbosity.",
+)
 @click.option(
     "--report-in-terminal",
     is_flag=True,
@@ -59,6 +78,7 @@ logger = logging.getLogger("transformo")
 )
 def main(
     configuration_file: click.Path,
+    verbosity: int,
     report_in_terminal: bool,
     markdown: bool,
     html: bool,
@@ -76,6 +96,8 @@ def main(
 
     This application is under development and can be expected to change in the future.
     """
+
+    set_logging_level(verbosity)
 
     with open(configuration_file, "r", encoding="utf-8") as yaml:
         pipeline = Pipeline.from_yaml(yaml.read())
