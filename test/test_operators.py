@@ -7,6 +7,7 @@ from typing import Literal
 import numpy as np
 import pytest
 
+from transformo import Parameter
 from transformo.operators import DummyOperator, HelmertTranslation, Operator
 from transformo.typing import CoordinateMatrix
 
@@ -35,8 +36,8 @@ def test_base_operator(source_coordinates):
         def _proj_name(self) -> str:
             return "noop"
 
-        def _parameter_dict(self) -> dict[str, str | float]:
-            return {}
+        def _parameter_list(self) -> list[Parameter]:
+            return []
 
     with pytest.raises(TypeError):
         Operator()
@@ -62,8 +63,8 @@ def test_base_operator(source_coordinates):
     assert operator.proj_operation_name == "noop"
 
     # Some checks for the `parameters` property
-    assert operator.parameters == operator._parameter_dict()
-    assert operator.parameters == {}
+    assert operator.parameters == operator._parameter_list()
+    assert operator.parameters == []
 
     # The `estimate()` method is not implemented so this should return False
     assert operator.can_estimate is False
@@ -123,6 +124,6 @@ def test_helmerttranslation():
 
     # does the `Operator.paramers` property work as expected?
     assert len(op.parameters) == 3
-    assert op.parameters["x"] == 3
-    assert op.parameters["y"] == 5
-    assert op.parameters["z"] == 10
+    assert op.parameters[0] == Parameter("x", 3)
+    assert op.parameters[1] == Parameter("y", 5)
+    assert op.parameters[2] == Parameter("z", 10)

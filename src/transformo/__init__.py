@@ -10,6 +10,8 @@ import numpy as np
 import pydantic
 from pydantic.dataclasses import dataclass
 
+from transformo.typing import ParameterValue
+
 __version__ = "0.1.0"
 
 
@@ -95,3 +97,40 @@ class Coordinate:
         weights = np.divide(1, self.stddev)
 
         return np.multiply(weights, self.w)
+
+
+class Parameter:
+    """
+    Transformation parameters for use in `Operator`s.
+    """
+
+    name: str
+    value: ParameterValue
+
+    def __init__(self, name: str, value: ParameterValue = None) -> None:
+        self.name = name.lstrip("+")
+        self.value = value
+
+    def __eq__(self, other) -> bool:
+        """Compare two Parameters"""
+        return self.name == other.name and self.value == other.value
+
+    @property
+    def is_flag(self) -> bool:
+        """
+        Does this parameter represent a flag?
+
+        A flag can be regarded as an on/off switch. If it's there it means that some
+        condition is true.
+        """
+        return self.value is None
+
+    @property
+    def as_proj_param(self) -> str:
+        """
+        Get the parameter in PROJ string representation.
+        """
+        if self.is_flag:
+            return f"+{self.name}"
+
+        return f"+{self.name}={self.value}"

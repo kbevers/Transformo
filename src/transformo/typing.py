@@ -10,4 +10,4 @@ import numpy.typing as npt
 Vector = Annotated[npt.NDArray[np.floating], Literal[3, 1]]
 CoordinateMatrix = Annotated[npt.NDArray[np.floating], Literal["N", 3]]
 
-ParameterValue = str | float
+ParameterValue = str | float | None

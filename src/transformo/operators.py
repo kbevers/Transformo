@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Protocol
 import numpy as np
 import pydantic
 
-from transformo.typing import CoordinateMatrix, ParameterValue, Vector
+from transformo import Parameter
+from transformo.typing import CoordinateMatrix, Vector
 
 
 # MyPy acts up a bit when encountering class variables that are Optional.
@@ -92,7 +93,7 @@ class Operator(pydantic.BaseModel):
 
     def __repr__(self) -> str:
         """ """
-        params = ", ".join(f"{k}: {v}" for k, v in self.parameters.items())
+        params = ", ".join(f"{p.name}: {p.value}" for p in self.parameters)
         return self.__class__.__name__ + f"({params})"
 
     @classmethod
@@ -119,7 +120,7 @@ class Operator(pydantic.BaseModel):
         """Helper for the `proj_operation_name` property."""
 
     @abstractmethod
-    def _parameter_dict(self) -> dict[str, ParameterValue]:
+    def _parameter_list(self) -> list[Parameter]:
         """Helper for the `parameters` property."""
 
     @property
@@ -163,25 +164,24 @@ class Operator(pydantic.BaseModel):
         return self._proj_name()
 
     @property
-    def parameters(self) -> dict[str, ParameterValue]:
+    def parameters(self) -> list[Parameter]:
         """
         Return parameters in a standardized way.
 
-        Parameters are returned as a dict with the parameter names given as
-        the keys with their corresponding values. Parameter names in the keys
-        are generally meant to be the same as they would be in PROJ (without the
-        +'s).
+        Parameters are returned as a list of `Parameters`. All Parameters are named
+        and their value is optional. Parameters are generally meant to be equivalent
+        to parameters in PROJ.
 
         Following PROJ conventions, a parameter entry be on one of the following
         forms:
 
-            1. +param=number
-            2. +param=string
-            3. +
+            1. param=number
+            2. param=string
+            3. param
 
         Abstract method. Needs to be implemented by inheriting classes.
         """
-        return self._parameter_dict()
+        return self._parameter_list()
 
     @abstractmethod
     def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
@@ -223,8 +223,8 @@ class DummyOperator(Operator):
 
     type: Literal["dummy_operator"] = "dummy_operator"
 
-    def _parameter_dict(self) -> dict[str, ParameterValue]:
-        return {}
+    def _parameter_list(self) -> list[Parameter]:
+        return []
 
     def _proj_name(self) -> str:
         return "noop"
@@ -307,16 +307,16 @@ class HelmertTranslation(Operator):
 
         return "helmert"
 
-    def _parameter_dict(self) -> dict[str, ParameterValue]:
-        params: dict[str, ParameterValue] = {}
+    def _parameter_list(self) -> list[Parameter]:
+        params: list[Parameter] = []
         if not _isnan(self.x) and self.x != 0.0:
-            params["x"] = _float(self.x)
+            params.append(Parameter("x", _float(self.x)))
 
         if not _isnan(self.y) and self.y != 0.0:
-            params["y"] = _float(self.y)
+            params.append(Parameter("y", _float(self.y)))
 
         if not _isnan(self.z) and self.z != 0.0:
-            params["z"] = _float(self.z)
+            params.append(Parameter("z", _float(self.z)))
 
         return params
 

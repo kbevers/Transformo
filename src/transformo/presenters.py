@@ -178,11 +178,8 @@ class PROJPresenter(Presenter):
                 continue
 
             projstr = f"+proj={operator.proj_operation_name}"
-            for param, value in operator.parameters.items():
-                if value is None:
-                    projstr += f" +{param}"
-                else:
-                    projstr += f" +{param}={value}"
+            for param in operator.parameters:
+                projstr += f" {param.as_proj_param}"
 
             steps.append(projstr)
 

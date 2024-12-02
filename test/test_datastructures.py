@@ -5,7 +5,7 @@ Tests of basic data structures like `Coordinate`.
 import numpy as np
 import pytest
 
-from transformo import Coordinate
+from transformo import Coordinate, Parameter
 
 
 def test_coordinate_from_str():
@@ -79,3 +79,23 @@ def test_coordinate_weights_property(coordinate: Coordinate):
     assert coordinate.weights[2] == 1 / coordinate.sz * coordinate.w
 
     assert isinstance(coordinate.weights, np.ndarray)
+
+
+def test_parameter():
+    """Test functionality of Parameter"""
+
+    proj_parameter = Parameter("proj", "helmert")
+    assert proj_parameter.is_flag is False
+    assert proj_parameter.as_proj_param == "+proj=helmert"
+
+    flag_parameter = Parameter("step")
+    assert flag_parameter.is_flag is True
+    assert flag_parameter.as_proj_param == "+step"
+
+    plus_flag_parameter = Parameter("+step")
+    assert plus_flag_parameter.is_flag is True
+    assert plus_flag_parameter.as_proj_param == "+step"
+
+    float_parameter = Parameter("float", 123.432)
+    assert float_parameter.is_flag is False
+    assert float_parameter.as_proj_param == "+float=123.432"
