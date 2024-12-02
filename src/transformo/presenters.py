@@ -181,7 +181,9 @@ class PROJPresenter(Presenter):
             for param in operator.parameters:
                 projstr += f" {param.as_proj_param}"
 
-            steps.append(projstr)
+            # if `projstr` is a PROJ pipeline definition we need to manipulate it a bit to avoid
+            # nested pipelines (which is not allowed in PROJ)
+            steps.append(projstr.removeprefix("+proj=pipeline +step").lstrip())
 
         if len(steps) == 0:
             self._output["projstring"] = "+proj=noop"

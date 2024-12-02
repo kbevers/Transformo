@@ -4,7 +4,12 @@ from typing import Literal
 import pytest
 
 from transformo.datasources import CsvDataSource, DataSource
-from transformo.operators import DummyOperator, HelmertTranslation, Operator
+from transformo.operators import (
+    DummyOperator,
+    HelmertTranslation,
+    Operator,
+    ProjOperator,
+)
 from transformo.presenters import (
     CoordinatePresenter,
     DummyPresenter,
@@ -78,6 +83,9 @@ def test_proj_presenter():
     helmert = HelmertTranslation()
     helmert_with_params = HelmertTranslation(x=3.42, y=534.533, z=1234.5678)
     helmert_with_one_params = HelmertTranslation(y=432.52)
+    proj_with_pipeline = ProjOperator(
+        proj_string="+proj=pipeline +step +proj=cart +inv +step +proj=utm +zone=32"
+    )
 
     presenter_with_no_operators = PROJPresenter()
     presenter_with_no_operators.evaluate(operators=[], results=[])
@@ -110,6 +118,30 @@ Transformation parameters given as a [PROJ](https://proj.org/) string.
 
     print(presenter_with_several_operators.as_markdown())
     assert presenter_with_several_operators.as_markdown() == expected_pipeline
+
+    # Test that nested PROJ pipelines are handled correctly
+    presenter_with_several_proj_pipeline_operators = PROJPresenter()
+    presenter_with_several_proj_pipeline_operators.evaluate(
+        operators=[
+            dummy,
+            helmert_with_one_params,
+            proj_with_pipeline,
+            helmert_with_params,
+            proj_with_pipeline,
+        ],
+        results=[],
+    )
+    expected_pipeline = (
+        "+proj=pipeline "
+        "+step +proj=helmert +y=432.52 "
+        "+step +proj=cart +inv +step +proj=utm +zone=32 "
+        "+step +proj=helmert +x=3.42 +y=534.533 +z=1234.5678 "
+        "+step +proj=cart +inv +step +proj=utm +zone=32"
+    )
+    assert (
+        presenter_with_several_proj_pipeline_operators.as_json()
+        == f'{{"projstring": "{expected_pipeline}"}}'
+    )
 
 
 def test_coordinate_presenter(files):

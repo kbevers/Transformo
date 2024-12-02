@@ -386,8 +386,15 @@ class ProjOperator(Operator):
 
         self._transformer = pyproj.Transformer.from_pipeline(self.proj_string)
 
-    def _parameter_dict(self) -> dict[str, ParameterValue]:
-        return {}
+    def _parameter_list(self) -> list[Parameter]:
+        params = []
+        for param in self.proj_string.split():
+            if param == "+proj=pipeline":
+                continue
+
+            params.append(Parameter.from_proj_param(param))
+
+        return params
 
     def _proj_name(self) -> str:
         matches = re.search(r"^\+?proj=([a-z]+) ", self.proj_string)

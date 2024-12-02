@@ -115,6 +115,17 @@ class Parameter:
         """Compare two Parameters"""
         return self.name == other.name and self.value == other.value
 
+    @classmethod
+    def from_proj_param(self, param: str) -> Parameter:
+        """
+        Create a Paramater from a PROJ string like parameter.
+        """
+        try:
+            name, value = param.lstrip("+").split("=")
+            return Parameter(name, value)
+        except ValueError:
+            return Parameter(param.lstrip("+"))
+
     @property
     def is_flag(self) -> bool:
         """
