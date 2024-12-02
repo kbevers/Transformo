@@ -118,6 +118,7 @@ venv.bak/
 
 
 # Transformo specific ignores
+transformo_results/
 *.html
 *.pdf
 *.png
