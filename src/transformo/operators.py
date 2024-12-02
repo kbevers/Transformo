@@ -5,11 +5,14 @@ Transformo operator classes.
 from __future__ import annotations
 
 import math
+import re
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Protocol
 
 import numpy as np
 import pydantic
+import pyproj
+import pyproj.enums
 
 from transformo import Parameter
 from transformo.typing import CoordinateMatrix, Vector
@@ -367,3 +370,51 @@ class HelmertTranslation(Operator):
         self.x = mean_translation[0]
         self.y = mean_translation[1]
         self.z = mean_translation[2]
+
+
+class ProjOperator(Operator):
+    """
+    Expose PROJ operations.
+    """
+
+    type: Literal["proj_operator"] = "proj_operator"
+
+    proj_string: str
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+        self._transformer = pyproj.Transformer.from_pipeline(self.proj_string)
+
+    def _parameter_dict(self) -> dict[str, ParameterValue]:
+        return {}
+
+    def _proj_name(self) -> str:
+        matches = re.search(r"^\+?proj=([a-z]+) ", self.proj_string)
+        assert matches is not None, "PROJ string is ill-formed"
+
+        return matches.group(1)
+
+    def forward(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
+        """
+        Forward method of the Transformation.
+        """
+        x, y, z = self._transformer.transform(
+            coordinates[:, 0],
+            coordinates[:, 1],
+            coordinates[:, 2],
+            direction=pyproj.enums.TransformDirection.FORWARD,
+        )
+        return np.array([x, y, z]).transpose()
+
+    def inverse(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
+        """
+        Inverse method of the Transformation.
+        """
+        x, y, z = self._transformer.transform(
+            coordinates[:, 0],
+            coordinates[:, 1],
+            coordinates[:, 2],
+            direction=pyproj.enums.TransformDirection.INVERSE,
+        )
+        return np.array([x, y, z]).transpose()
