@@ -12,10 +12,20 @@ import pydantic
 import pydantic_yaml
 
 import transformo
-from transformo.datasources import DataSource, DataSourceLike
-from transformo.operators import Operator, OperatorLike
-from transformo.presenters import Presenter, PresenterLike
-from transformo.typing import CoordinateMatrix
+
+# We need the subclassed DataSources, Operators and Presenters to be known to Pydantic
+# in order to resolve the type-discriminator. Without importing them, Python doesn't
+# know about the subclasses and they aren't exposed in __subclasses__.
+import transformo.datasources
+import transformo.operators
+import transformo.presenters
+from transformo._typing import (
+    CoordinateMatrix,
+    DataSourceLike,
+    OperatorLike,
+    PresenterLike,
+)
+from transformo.core import DataSource, Operator, Presenter
 
 
 class Pipeline(pydantic.BaseModel):

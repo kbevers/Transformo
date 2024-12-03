@@ -8,8 +8,8 @@ from typing import Callable
 import numpy as np
 import pytest
 
+from transformo._typing import CoordinateMatrix
 from transformo.datasources import CsvDataSource, DataSource
-from transformo.typing import CoordinateMatrix
 
 
 def test_datasource(coordinate_factory: Callable) -> None:

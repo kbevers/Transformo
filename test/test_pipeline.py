@@ -5,8 +5,8 @@ Test the pipeline class.
 import json
 from typing import Callable, Dict
 
-from transformo import Coordinate
 from transformo.datasources import CsvDataSource, DataSource
+from transformo.datatypes import Coordinate
 from transformo.operators import DummyOperator, HelmertTranslation
 from transformo.pipeline import Pipeline
 from transformo.presenters import CoordinatePresenter, DummyPresenter, PROJPresenter

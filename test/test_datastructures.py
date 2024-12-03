@@ -5,7 +5,7 @@ Tests of basic data structures like `Coordinate`.
 import numpy as np
 import pytest
 
-from transformo import Coordinate, Parameter
+from transformo.datatypes import Coordinate, Parameter
 
 
 def test_coordinate_from_str():

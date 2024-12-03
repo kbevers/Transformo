@@ -7,9 +7,9 @@ from typing import Literal
 import numpy as np
 import pytest
 
-from transformo import Parameter
+from transformo._typing import CoordinateMatrix
+from transformo.datatypes import Parameter
 from transformo.operators import DummyOperator, HelmertTranslation, Operator
-from transformo.typing import CoordinateMatrix
 
 
 def test_base_operator(source_coordinates):

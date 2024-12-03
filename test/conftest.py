@@ -10,8 +10,8 @@ from typing import Callable, Dict
 import numpy as np
 import pytest
 
-import transformo
 from transformo.datasources import CsvDataSource, DataSource
+from transformo.datatypes import Coordinate
 
 
 def random_string(n: int = 10):
@@ -58,7 +58,7 @@ def coordinate_factory() -> Callable:
     """
 
     def factory():
-        return transformo.Coordinate(
+        return Coordinate(
             station=random_string(4),
             t=2000 + random.random() * 25,
             x=500000 + random.random() * 1000000,
@@ -74,7 +74,7 @@ def coordinate_factory() -> Callable:
 
 
 @pytest.fixture()
-def coordinate(coordinate_factory: Callable) -> transformo.Coordinate:
+def coordinate(coordinate_factory: Callable) -> Coordinate:
     """Coordinate fixture."""
     return coordinate_factory()
 
