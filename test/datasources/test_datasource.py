@@ -2,14 +2,13 @@
 Test built-in datasources.
 """
 
-from pathlib import Path
 from typing import Callable
 
 import numpy as np
 import pytest
 
 from transformo._typing import CoordinateMatrix
-from transformo.datasources import CsvDataSource, DataSource
+from transformo.datasources import DataSource
 
 
 def test_datasource(coordinate_factory: Callable) -> None:
@@ -65,28 +64,3 @@ def test_datasource_update_coordinates(datasource: DataSource) -> None:
     too_many_coordiantes = np.ones((n + 1, 3))
     with pytest.raises(ValueError):
         datasource.update_coordinates(too_many_coordiantes)
-
-
-def test_csvdatasource(files: dict[str, Path]) -> None:
-    """
-    Test the CsvReader
-    """
-    # this csv-file has a header
-    with_header = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
-    assert isinstance(with_header, CsvDataSource)
-
-    # no header in this csv file
-    without_header = CsvDataSource(filename=files["dk_cors_itrf2014.csv"])
-    assert isinstance(without_header, CsvDataSource)
-
-    from_filename_string = CsvDataSource(filename=str(files["dk_cors_itrf2014.csv"]))
-    assert isinstance(from_filename_string, CsvDataSource)
-
-    # We've got the same stations in both of the used test files, so let's check that they've
-    # been read as expected
-    test_stations = set(
-        ["BUDP", "ESBC", "FER5", "FYHA", "GESR", "HABY", "HIRS", "SMID", "SULD", "TEJH"]
-    )
-    assert test_stations == set(c.station for c in with_header.coordinates)
-    assert test_stations == set(c.station for c in without_header.coordinates)
-    assert test_stations == set(c.station for c in from_filename_string.coordinates)
