@@ -74,9 +74,12 @@ def set_logging_level(verbosity: int) -> None:
     "--out-dir",
     default="transformo_results",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    help="Directory where generated files are placed. Defaults to `transformo_results` placed in the current working directory.",
+    help=(
+        "Directory where generated files are placed. Defaults to `transformo_results` "
+        "placed in the current working directory."
+    ),
 )
-def main(
+def main(  # pylint: disable=too-many-arguments
     configuration_file: click.Path,
     verbosity: int,
     report_in_terminal: bool,
@@ -137,7 +140,7 @@ def main(
             logger.error(
                 "Can't write HTML file. Perhaps a file with the same name is open?"
             )
-            raise SystemExit(1)
+            raise SystemExit(1)  # pylint: disable=raise-missing-from
 
     if pdf:
         try:
@@ -150,4 +153,4 @@ def main(
             logger.error(
                 "Can't write PDF file. Perhaps a file with the same name is open?"
             )
-            raise SystemExit(1)
+            raise SystemExit(1)  # pylint: disable=raise-missing-from

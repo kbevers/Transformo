@@ -31,10 +31,26 @@ from transformo.core import DataSource, Operator, Presenter
 class Pipeline(pydantic.BaseModel):
     """The backbone of Transformo"""
 
-    source_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
-    target_data: list[Annotated[Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
-    operators: list[Annotated[Union[Operator.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
-    presenters: list[Annotated[Union[Presenter.get_subclasses()], pydantic.Field(discriminator="type")]]  # type: ignore[valid-type]
+    source_data: list[  # type: ignore[valid-type]
+        Annotated[
+            Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")
+        ]
+    ]
+    target_data: list[  # type: ignore[valid-type]
+        Annotated[
+            Union[DataSource.get_subclasses()], pydantic.Field(discriminator="type")
+        ]
+    ]
+    operators: list[  # type: ignore[valid-type]
+        Annotated[
+            Union[Operator.get_subclasses()], pydantic.Field(discriminator="type")
+        ]
+    ]
+    presenters: list[  # type: ignore[valid-type]
+        Annotated[
+            Union[Presenter.get_subclasses()], pydantic.Field(discriminator="type")
+        ]
+    ]
 
     def __init__(
         self,

@@ -101,7 +101,7 @@ class HelmertTranslation(Operator):
         return params
 
     @property
-    def T(self) -> Vector:
+    def T(self) -> Vector:  # pylint: disable=invalid-name
         """
         The translation parameters as a vector.
         """
