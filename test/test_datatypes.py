@@ -33,7 +33,8 @@ def test_coordinate_from_str():
     assert c.sz == 1.0
     assert c.w == 1.0
 
-    # ... and for good measure, a few checks to verify that pydantic does what it is meant to do
+    # ... and for good measure, a few checks to verify that
+    # pydantic does what it is meant to do
     with pytest.raises(ValueError):
         c = Coordinate.from_str(
             "5234",

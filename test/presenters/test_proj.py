@@ -34,7 +34,11 @@ def test_proj_presenter():
         operators=[dummy, helmert_with_one_params, helmert_with_params], results=[]
     )
 
-    expected_pipeline = "+proj=pipeline +step +proj=helmert +y=432.52 +step +proj=helmert +x=3.42 +y=534.533 +z=1234.5678"
+    expected_pipeline = (
+        "+proj=pipeline +step "
+        "+proj=helmert +y=432.52 +step "
+        "+proj=helmert +x=3.42 +y=534.533 +z=1234.5678"
+    )
     assert (
         presenter_with_several_operators.as_json()
         == f'{{"projstring": "{expected_pipeline}"}}'

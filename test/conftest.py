@@ -13,6 +13,8 @@ import pytest
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
 
+# pylint: disable=redefined-outer-name
+
 
 def random_string(n: int = 10):
     """

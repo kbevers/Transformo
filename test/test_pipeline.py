@@ -3,7 +3,7 @@ Test the pipeline class.
 """
 
 import json
-from typing import Callable, Dict
+from typing import Callable
 
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
