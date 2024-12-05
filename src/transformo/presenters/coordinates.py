@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 from typing import Literal
 
+import numpy as np
+
 from transformo.core import DataSource, Operator, Presenter
 
 from . import construct_markdown_table
@@ -83,3 +85,54 @@ class CoordinatePresenter(Presenter):
             text += f"{table}\n\n"
 
         return text.rstrip()
+
+
+class ResidualPresenter(Presenter):
+    """
+    Determine residuals between transformed and target coordinates.
+    """
+
+    type: Literal["residual_presenter"] = "residual_presenter"
+
+    def __init__(self, **kwargs) -> None:
+        """."""
+        super().__init__(**kwargs)
+
+        self._data: dict[str, list] = {}
+
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+        """
+        Residuals between the target coordinates and coordinates from final step of
+        pipeline.
+        """
+        stations = results[0].stations
+        target = results[-1].coordinate_matrix
+        model = results[-2].coordinate_matrix
+
+        residuals = np.subtract(target, model)
+
+        for station, residual in zip(stations, residuals):
+
+            self._data[station] = list(residual) + [np.linalg.norm(residual)]
+
+    def as_json(self) -> str:
+        return json.dumps(self._data)
+
+    def as_markdown(self) -> str:
+        fmt = ".3f"
+
+        header = ["Station", "Rx", "Ry", "Rz", "Norm"]
+        rows = []
+        for station, residuals in self._data.items():
+            row = [station, *[format(r, fmt) for r in residuals]]
+            rows.append(row)
+
+        text = (
+            "Residuals of the modelled coordinates as compared to "
+            "target cooordinates. The table contains simple "
+            "differences of the individual coordinate components "
+            "as well as the length (norm) of the residual vector.\n\n"
+        )
+        text += construct_markdown_table(header, rows)
+
+        return text
