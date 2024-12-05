@@ -4,8 +4,9 @@ Tests for transformo.presenters.coordinates
 
 import json
 
-from transformo.datasources import CsvDataSource
-from transformo.presenters import CoordinatePresenter
+from transformo.datasources import CsvDataSource, DataSource
+from transformo.datatypes import Coordinate
+from transformo.presenters import CoordinatePresenter, ResidualPresenter
 
 
 def test_coordinate_presenter(files):
@@ -65,3 +66,37 @@ Source and target coordinates as well as intermediate results shown in tabular f
 
     print(p.as_markdown())
     assert expected_text == p.as_markdown()
+
+
+def test_residual_presenter():
+    """
+    Test the residual presenter.
+    """
+
+    model = DataSource(
+        coordinates=[
+            Coordinate("A", 2000, 0, 0, 0, 0, 0, 0),
+            Coordinate("B", 2000, 0, 0, 0, 0, 0, 0),
+        ]
+    )
+
+    target = DataSource(
+        coordinates=[
+            Coordinate("A", 2000, 2.5, 2.5, 2.5, 0, 0, 0, 0),
+            Coordinate("B", 2000, 1, 0, 0, 0, 0, 0, 0),
+        ]
+    )
+
+    presenter = ResidualPresenter()
+    presenter.evaluate(operators=[], results=[model, target])
+
+    data = json.loads(presenter.as_json())
+
+    assert data["A"][0] == 2.5
+    assert data["B"][3] == 1.0
+
+    print(data)
+
+    print(presenter.as_markdown())
+
+    assert False

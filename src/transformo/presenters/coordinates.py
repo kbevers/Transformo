@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 from typing import Literal
 
+import numpy as np
+
 from transformo.core import DataSource, Operator, Presenter
 
 from . import construct_markdown_table
@@ -83,3 +85,77 @@ class CoordinatePresenter(Presenter):
             text += f"{table}\n\n"
 
         return text.rstrip()
+
+
+class ResidualPresenter(Presenter):
+    """
+    Determine residuals between transformed and target coordinates.
+    """
+
+    type: Literal["residual_presenter"] = "residual_presenter"
+
+    def __init__(self, **kwargs) -> None:
+        """."""
+        super().__init__(**kwargs)
+
+        self._data: dict = {}
+
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+        """
+        Residuals between the target coordinates and coordinates from final step of
+        pipeline.
+        """
+        stations = results[0].stations
+        target = results[-1].coordinate_matrix
+        model = results[-2].coordinate_matrix
+
+        residuals = np.subtract(target, model)
+        residual_norms = [np.linalg.norm(r) for r in residuals]
+
+        self._data["residuals"] = {}
+        for station, residual, norm in zip(stations, residuals, residual_norms):
+            self._data["residuals"][station] = list(residual) + [norm]
+
+        self._data["stats"] = {}
+        self._data["stats"]["avg"] = list(np.mean(residuals, axis=0)) + [
+            np.mean(residual_norms)
+        ]
+        self._data["stats"]["std"] = list(np.std(residuals, axis=0)) + [
+            np.std(residual_norms)
+        ]
+
+        print(self._data["stats"])
+
+    def as_json(self) -> str:
+        return json.dumps(self._data)
+
+    def as_markdown(self) -> str:
+        fmt = "< 10.3g"  # three significant figures, could potentially be an option
+
+        header = ["Station", "Rx", "Ry", "Rz", "Norm"]
+        rows = []
+        for station, residuals in self._data["residuals"].items():
+            row = [station, *[format(r, fmt) for r in residuals]]
+            rows.append(row)
+
+        text = (
+            "### Station coordinate residuals\n\n"
+            "Residuals of the modelled coordinates as compared to "
+            "target cooordinates. The table contains simple "
+            "differences of the individual coordinate components "
+            "as well as the length (norm) of the residual vector.\n\n"
+        )
+        text += construct_markdown_table(header, rows)
+
+        text += "\n\n### Residual statistics\n"
+
+        header = ["Measure", "Rx", "Ry", "Rz", "Norm"]
+        rows = []
+        for measure, values in self._data["stats"].items():
+            row = [measure, *[format(v, fmt) for v in values]]
+            rows.append(row)
+
+        text += "\n"
+        text += construct_markdown_table(header, rows)
+
+        return text
