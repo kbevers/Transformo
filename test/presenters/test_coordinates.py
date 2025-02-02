@@ -6,7 +6,12 @@ import json
 
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
-from transformo.presenters import CoordinatePresenter, ResidualPresenter
+from transformo.presenters import (
+    CoordinatePresenter,
+    CoordinateType,
+    ResidualPresenter,
+    TopocentricResidualPresenter,
+)
 
 
 def test_coordinate_presenter(files):
@@ -92,11 +97,30 @@ def test_residual_presenter():
 
     data = json.loads(presenter.as_json())
 
-    assert data["A"][0] == 2.5
-    assert data["B"][3] == 1.0
+    assert data["residuals"]["A"][0] == 2.5
+    assert data["residuals"]["B"][3] == 1.0
 
     print(data)
-
     print(presenter.as_markdown())
 
-    assert False
+
+def test_topocentricresidual_presenter_degree():
+    """
+    Test the topocentric residual presenter using coordinate type degrees.
+    """
+
+    model = DataSource(
+        coordinates=[
+            Coordinate("A", 2000, 12.6961326, 55.9078613, 23.523, 0, 0, 0),
+            Coordinate("B", 2000, 12.5757822, 55.6813657, 7.067, 0, 0, 0),
+        ]
+    )
+    target = DataSource(
+        coordinates=[
+            Coordinate("A", 2000, 12.6961374, 55.9078623, 23.585, 0, 0, 0),
+            Coordinate("B", 2000, 12.5757852, 55.6813612, 7.012, 0, 0, 0),
+        ]
+    )
+
+    presenter = TopocentricResidualPresenter(coordinate_type=CoordinateType.DEGREES)
+    presenter.evaluate(operators=[], results=[model, target])

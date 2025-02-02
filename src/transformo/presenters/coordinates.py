@@ -5,11 +5,13 @@ Presenters related to coordinates.
 from __future__ import annotations
 
 import json
+from enum import Enum
 from typing import Literal
 
 import numpy as np
 
-from transformo.core import DataSource, Operator, Presenter
+from transformo._typing import CoordinateMatrix
+from transformo.core import DataSource, Operator, Presenter, Transformer
 
 from . import construct_markdown_table
 
@@ -124,8 +126,6 @@ class ResidualPresenter(Presenter):
             np.std(residual_norms)
         ]
 
-        print(self._data["stats"])
-
     def as_json(self) -> str:
         return json.dumps(self._data)
 
@@ -150,6 +150,140 @@ class ResidualPresenter(Presenter):
         text += "\n\n### Residual statistics\n"
 
         header = ["Measure", "Rx", "Ry", "Rz", "Norm"]
+        rows = []
+        for measure, values in self._data["stats"].items():
+            row = [measure, *[format(v, fmt) for v in values]]
+            rows.append(row)
+
+        text += "\n"
+        text += construct_markdown_table(header, rows)
+
+        return text
+
+
+class CoordinateType(Enum):
+    """
+    Defines coordinate archetypes.
+    """
+
+    CARTESIAN = "cartesian"
+    DEGREES = "degrees"
+    PROJECTED = "projected"
+
+
+class TopocentricResidualPresenter(Presenter):
+    """
+    Determine topocentric residuals between transformed and target coordinates.
+
+    Three types of coordinates are know to Transformo:
+
+        Degrees:    Latitude, longitude, height above ellipsoid
+        Cartesian:  Geocentric, cartesian coordinates. Also known as ECEF.
+        Projected:  Coordinates in a projected CRS.
+
+    Residuals are given as differences in the north (N), east (E) and up (U)
+    components. Coordinates of types degrees and cartesian
+
+    Projected coordinates are assumed to already be somewhat topocentric, and
+    will not be manipulated before the residuals are calculated.
+
+    Degrees ...
+    """
+
+    type: Literal["topocentricresidual_presenter"] = "topocentricresidual_presenter"
+
+    coordinate_type: CoordinateType
+
+    def __init__(self, coordinate_type: CoordinateType, **kwargs) -> None:
+        """."""
+        super().__init__(coordinate_type=coordinate_type, **kwargs)
+
+        self._data: dict = {}
+
+        # set up degrees -> cartesian converter
+        self._cart_transformer = Transformer.from_projstring("+proj=cart +ellps=GRS80")
+
+    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+        """
+        Residuals between the target coordinates and coordinates from final step of
+        pipeline.
+        """
+        stations = results[0].stations
+        target = results[-1].coordinate_matrix
+        model = results[-2].coordinate_matrix
+        # residuals: CoordinateMatrix = None
+
+        if self.coordinate_type in (CoordinateType.DEGREES, CoordinateType.CARTESIAN):
+            # We can leverage PROJ's "topocentric" operation for this.
+            # When the topocentric origin is set to the target coordinate,
+            # we can feed the transformed coordinate to the operation which
+            # will then return the topocentric residual.
+            # It goes something like this:
+            # echo 3513638.5518   778956.1856   5248216.2445 | cct +proj=topocentric +X_0=3513638.5605 +Y_0=778956.1839 +Z_0=5248216.2482
+            if self.coordinate_type == CoordinateType.DEGREES:
+                target = self._cart_transformer.transform_many(target)
+                model = self._cart_transformer.transform_many(model)
+
+            templist = []
+            for m, t in zip(model, target):
+                pipeline = f"+proj=topocentric +ellps=GRS80 +X_0={t[0]} +Y_0={t[1]} +Z_0={t[2]}"
+                enu_diffs = Transformer.from_projstring(pipeline).transform_one(m)
+                templist.append(np.array(enu_diffs))
+                residuals = np.array(templist)
+
+        if self.coordinate_type == CoordinateType.PROJECTED:
+            residuals = np.subtract(target, model)
+
+        # convert residual values to mm
+        residuals *= 1000
+
+        # calculate norms, results in mm
+        norms_2d = [np.linalg.norm((r[0], r[1])) for r in residuals]
+        norms_3d = [np.linalg.norm(r) for r in residuals]
+
+        self._data["residuals"] = {}
+        for station, residual, norm2d, norm3d in zip(
+            stations, residuals, norms_2d, norms_3d
+        ):
+            self._data["residuals"][station] = list(residual) + [norm2d] + [norm3d]
+
+        self._data["stats"] = {}
+        self._data["stats"]["avg"] = (
+            list(np.mean(residuals, axis=0)) + [np.mean(norms_2d)] + [np.mean(norms_3d)]
+        )
+        self._data["stats"]["std"] = (
+            list(np.std(residuals, axis=0)) + [np.std(norms_2d)] + [np.mean(norms_3d)]
+        )
+
+        # print(self._data["stats"])
+
+    def as_json(self) -> str:
+        return json.dumps(self._data)
+
+    def as_markdown(self) -> str:
+        # TODO: Rewrite help text
+        # TODO: Redo markdown headers
+
+        fmt = "< 10.3g"  # three significant figures, could potentially be an option
+
+        header = ["Station", "North", "East", "Up", "2D residual", "3D residual"]
+        rows = []
+        for station, residuals in self._data["residuals"].items():
+            row = [station, *[format(r, fmt) for r in residuals]]
+            rows.append(row)
+
+        text = (
+            "### Station coordinate residuals\n\n"
+            "Residuals of the modelled coordinates as compared to "
+            "target cooordinates. The table contains simple "
+            "differences of the individual coordinate components "
+            "as well as the length (norm) of the residual vector.\n\n"
+        )
+        text += construct_markdown_table(header, rows)
+
+        text += "\n\n### Residual statistics\n"
+
+        header = ["Measure", "Rx", "Ry", "Rz", "2D norm", "3D norm"]
         rows = []
         for measure, values in self._data["stats"].items():
             row = [measure, *[format(v, fmt) for v in values]]

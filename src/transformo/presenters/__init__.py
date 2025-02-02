@@ -64,7 +64,12 @@ class DummyPresenter(Presenter):
 # We keept the import's at the end to avoid a circular import. This can be changed
 # once `construct_markdown_table` finds a better home outside of this.
 # pylint: disable=wrong-import-position
-from .coordinates import CoordinatePresenter, ResidualPresenter
+from .coordinates import CoordinateType  # this could move elsewhere
+from .coordinates import (
+    CoordinatePresenter,
+    ResidualPresenter,
+    TopocentricResidualPresenter,
+)
 from .proj import PROJPresenter
 
 __all__ = [
@@ -73,4 +78,6 @@ __all__ = [
     "CoordinatePresenter",
     "PROJPresenter",
     "ResidualPresenter",
+    "TopocentricResidualPresenter",
+    "CoordinateType",  # This might move elsewhere
 ]
