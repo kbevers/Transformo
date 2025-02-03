@@ -43,6 +43,9 @@ def files() -> Dict[str, Path]:
         "data/dk_cors_etrs89.csv",
         # example of csv-file *without* a header
         "data/dk_cors_itrf2014.csv",
+        # Bernese CRD files
+        "data/dk_bernese52.CRD",
+        "data/dk_bernese54.CRD",
     ]
 
     basepath = Path(__file__).parent.absolute()

@@ -1,0 +1,25 @@
+# Demonstrate the use of the Bernese CRD-file datasource
+# In this transformo pipeline we examine the differences between
+# station coordinates determined with two different versions
+# of the Bernese software.
+
+source_data:
+- name: Coordinates determined using Bernes 5.2
+  type: bernese_crd
+  filename: C:\dev\transformo\test\data\dk_bernese52.crd
+  discard_flags: [W] # Flags are given as a list. Flags are separated by commas.
+
+target_data:
+- name: Coordinates determined using Bernes 5.4
+  type: bernese_crd
+  filename: C:\dev\transformo\test\data\dk_bernese54.crd
+  discard_flags: [W]
+
+operators:
+- name: null
+  type: dummy_operator
+
+presenters:
+- type: coordinate_presenter
+- type: topocentricresidual_presenter
+  coordinate_type: cartesian
