@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
+  - pip=25
   - click=8.1
   - numpy=2.0
   - pyproj=3.7
@@ -18,4 +19,4 @@ dependencies:
   - isort
   - pip:
     - pandoc
-    - py-markdown-table=1.2
+    - py-markdown-table
