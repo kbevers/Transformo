@@ -1,0 +1,24 @@
+# Demonstrate use of a multiple datasourcs.
+
+source_data:
+- name: ITRF2014 repeated
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+- name: ITRF2014-2
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+
+target_data:
+- name: ETRS89
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+- name: ETRS89 repeated
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+
+operators:
+- name: null
+  type: dummy_operator
+
+presenters:
+- type: coordinate_presenter

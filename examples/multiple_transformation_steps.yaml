@@ -1,0 +1,34 @@
+# Showcase using several operators in a pipeline.
+#
+# Here input coordinates are shifted 1000 m in the x-direction
+# and then a 3-parameter Helmert transformation is estimated
+# based on the transformed source coordinates and the target
+# coordinates.
+#
+# The resulting PROJ string of the estimated transformation is
+# presented at the end, as well as ENU residuals.
+
+source_data:
+- name: ITRF2014
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+
+target_data:
+- name: ETRS89
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+
+operators:
+- name: Offset coordinates
+  type: proj_operator
+  proj_string: +proj=helmert +x=1000
+
+- name: Estimate offset in x axis"
+  type: helmert_translation
+
+presenters:
+- name: PROJ string
+  type: proj_presenter
+- name: ENU Residuals
+  type: topocentricresidual_presenter
+  coordinate_type: cartesian

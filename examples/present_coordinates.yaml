@@ -1,0 +1,21 @@
+# Demonstrate simple use of a transformo pipeline.
+# This pipeline reads source and target data and display
+# the coordinates in nice tables.
+# The source coordinates aren't manipulated.
+
+source_data:
+- name: Coordinates determined using Bernes 5.2
+  type: bernese_crd
+  filename: test/data/dk_bernese52.crd
+
+target_data:
+- name: Coordinates determined using Bernes 5.4
+  type: bernese_crd
+  filename: test/data/dk_bernese54.crd
+
+operators:
+- name: null
+  type: dummy_operator
+
+presenters:
+- type: coordinate_presenter

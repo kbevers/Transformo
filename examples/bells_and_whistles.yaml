@@ -1,0 +1,26 @@
+# Demonstrate use of a all presenters.
+
+source_data:
+- name: ITRF2014
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+
+target_data:
+- name: ETRS89
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+
+operators:
+- name: null
+  type: dummy_operator
+
+presenters:
+- type: coordinate_presenter
+  name: Coordinates
+- type: proj_presenter
+  name: PROJ String
+- type: residual_presenter
+  name: Coordinate differences
+- type: topocentricresidual_presenter
+  name: ENU Residuals
+  coordinate_type: cartesian

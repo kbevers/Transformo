@@ -97,6 +97,14 @@ is optional but are useful when working with bigger pipelines. For named
 presenters the name will used as section headers for the presenter output in the
 report.
 
+In the `examples/` directory a number of example pipelines are available, that
+can be used as inspiration for creating your own. Run them from the root of the
+Transformo repository:
+
+```sh
+transformo --report-in-terminal examples/bells_and_whistles.yaml
+```
+
 ## Use cases
 
 * Estimate a 7-parameter Helmert transformation
