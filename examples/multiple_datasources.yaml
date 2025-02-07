@@ -15,6 +15,9 @@ target_data:
 - name: ETRS89 repeated
   type: csv
   filename: test/data/dk_cors_etrs89.csv
+  # Columns can be re-ordered and skipped according to the contents of the file.
+  # Here columns are purposely mixed up to demontrate this.
+  columns: [station, t, x, y, z, skip, sz, sx, skip, sy]
 
 operators:
 - name: null
