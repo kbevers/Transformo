@@ -121,14 +121,20 @@ def main(  # pylint: disable=too-many-arguments
 
         except ValidationError as error:
             errmsg = "Pipeline validation error."
+
             if logger.level == logging.ERROR:
                 errmsg += (
                     " Increase verbosity by adding '-v' to see the validation errors."
                 )
+
             logger.error(f"{errmsg}\n")
 
             for err in error.errors(include_url=False):
+                if err["type"] == "value_error":
+                    err["ctx"]["error"] = str(err["ctx"]["error"])
+
                 logger.warning(json.dumps(err, indent=2))
+
             raise SystemExit(2)
 
         except (ParserError, ScannerError) as error:
@@ -140,6 +146,10 @@ def main(  # pylint: disable=too-many-arguments
             logger.error(errmsg)
             logger.warning(error)
             raise SystemExit(3)
+
+        except ValueError as error:
+            logger.error(f"Input data error: {error}")
+            raise SystemExit(4)
 
     pipeline.process()
     markdown_results = pipeline.results_as_markdown()
