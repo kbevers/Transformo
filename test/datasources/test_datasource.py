@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from transformo._typing import CoordinateMatrix
-from transformo.datasources import DataSource
+from transformo.datasources import CombinedDataSource, CsvDataSource, DataSource
 
 
 def test_datasource(coordinate_factory: Callable) -> None:
@@ -64,3 +64,69 @@ def test_datasource_update_coordinates(datasource: DataSource) -> None:
     too_many_coordiantes = np.ones((n + 1, 3))
     with pytest.raises(ValueError):
         datasource.update_coordinates(too_many_coordiantes)
+
+
+def test_combineddatasource(datasource_factory: DataSource) -> None:
+    """
+    Test mechanincs of CombinedDataSource.
+    """
+    first = datasource_factory()
+    second = datasource_factory()
+    # number of coordinates assigned by the factory
+    n_coords = len(first.coordinates)
+
+    combined = CombinedDataSource(first, second)
+
+    assert isinstance(combined, CombinedDataSource)
+    assert len(combined.coordinates) == 2 * n_coords
+
+    combined2 = CombinedDataSource(combined, datasource_factory())
+    assert isinstance(combined2, CombinedDataSource)
+    assert len(combined2.coordinates) == 3 * n_coords
+
+
+def test_datasource_origins(datasource_factory: DataSource) -> None:
+    """
+    Test properties DataSource.origins and CombinedDataSource.origins.
+
+    The CombinedDataSource.origins property is recursive, here we test
+    that it delivers the expected results, even when going a few levels
+    deep.
+    """
+    first = datasource_factory()
+    second = datasource_factory()
+    third = datasource_factory()
+    fourth = datasource_factory()
+
+    combined = CombinedDataSource(first, second)
+
+    # verify that DataSource.origins returns itself, wrapped in a list
+    assert first == first.origins[0]
+    assert second == second.origins[0]
+
+    # verify that both datasource are returned in the combined origins list
+    assert first in combined.origins
+    assert second in combined.origins
+
+    # verify recursion of origin property
+    combined2 = CombinedDataSource(third, fourth)
+    combined3 = CombinedDataSource(combined, combined2)
+
+    assert len(combined3.origins) == 4
+    assert first in combined3.origins
+    assert second in combined3.origins
+    assert third in combined3.origins
+    assert fourth in combined3.origins
+
+    level4 = combined3 + combined2
+    assert len(level4.origins) == 4
+
+
+def test_datasource_hash(files) -> None:
+    """
+    Test DataSource.__hash__()
+    """
+    csv1 = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
+    csv2 = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
+
+    assert hash(csv1) != hash(csv2)

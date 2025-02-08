@@ -57,8 +57,19 @@ class DataSource(pydantic.BaseModel):
         joined together. The returned object is a generic `DataSource`,
         no matter what subclass of `DataSource` the two sources are created from.
         """
-        new_coordinate_list = self.coordinates + other.coordinates
-        return DataSource(coordinates=new_coordinate_list)
+        # new_coordinate_list = self.coordinates + other.coordinates
+        # return DataSource(coordinates=new_coordinate_list)
+        return CombinedDataSource(self, other)
+
+    def __hash__(self) -> int:
+        """
+        Hash of the DataSource.
+
+        Two identicial DataSources will return different hashes. E.g., it is
+        possible to instantiate two DataSources based on the same file without
+        them having the same hash.
+        """
+        return hash(str(id(self)))
 
     @classmethod
     def get_subclasses(cls) -> Iterable[type[DataSource]]:
@@ -96,6 +107,13 @@ class DataSource(pydantic.BaseModel):
         """
         return [c.station for c in self.coordinates]  # pylint: disable=E1133
 
+    @property
+    def origins(self) -> list[DataSource]:
+        """
+        Get a list of this DataSource's origins.
+        """
+        return [self]
+
     def update_coordinates(self, coordinates: CoordinateMatrix) -> DataSource:
         """
         Create a new DataSource based on the current instance but with the
@@ -121,6 +139,35 @@ class DataSource(pydantic.BaseModel):
             new_coordinates.append(coord)
 
         return DataSource(coordinates=new_coordinates)
+
+
+class CombinedDataSource(DataSource):
+    """Combination of two or more DataSource's."""
+
+    # Mypy and pydantic have conflicting needs:
+    # Pydantic won't work unless the type is a stric Literal
+    # and MyPy will complain about conflicting types when the base class
+    # is using a different Literal than an inheriting class.
+    if TYPE_CHECKING:
+        type: Any = "combined_datasource"
+    else:
+        type: Literal["combined_datasource"] = "combined_datasource"
+
+    def __init__(self, first: DataSource, second: DataSource, **kwargs) -> None:
+        """Set up base reader."""
+        coordinates = first.coordinates + second.coordinates
+        super().__init__(coordinates=coordinates, **kwargs)
+
+        self._origins: list[DataSource] = [first, second]
+
+    @property
+    def origins(self) -> list[DataSource]:
+        l = []
+        for datasource in self._origins:
+            l.extend(datasource.origins)
+
+        # we do not want to return duplicates
+        return list(set(l))
 
 
 class Operator(pydantic.BaseModel):
