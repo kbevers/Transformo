@@ -76,6 +76,7 @@ from .coordinates import (
     ResidualPresenter,
     TopocentricResidualPresenter,
 )
+from .datasources import DatasourcePresenter
 from .proj import PROJPresenter
 
 __all__ = [
@@ -86,4 +87,5 @@ __all__ = [
     "ResidualPresenter",
     "TopocentricResidualPresenter",
     "CoordinateType",  # This might move elsewhere
+    "DatasourcePresenter",
 ]
