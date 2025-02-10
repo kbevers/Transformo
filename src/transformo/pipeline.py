@@ -71,7 +71,7 @@ class Pipeline(pydantic.BaseModel):
         self._combined_source_data = sum(self.source_data, DataSource(None))
         self._combined_target_data = sum(self.target_data, DataSource(None))
 
-        self._intermediate_results: list[DataSource] = [self._combined_source_data]
+        self._intermediate_results: list[DataSource] = []
 
     @classmethod
     def from_yaml(cls, yaml: str | bytes | bytearray) -> Pipeline:
@@ -110,7 +110,7 @@ class Pipeline(pydantic.BaseModel):
 
         TODO: Think of a better name.
         """
-        if len(self._intermediate_results) != len(self.operators) + 2:
+        if len(self._intermediate_results) != len(self.operators):
             self.process()
         return self._intermediate_results
 
@@ -157,10 +157,13 @@ class Pipeline(pydantic.BaseModel):
             )
             self._intermediate_results.append(current_step_datasource)
 
-        self._intermediate_results.append(self._combined_target_data)
-
         for presenter in self.presenters:
-            presenter.evaluate(operators=self.operators, results=self.results)
+            presenter.evaluate(
+                operators=self.operators,
+                source_data=self.all_source_data,
+                target_data=self.all_target_data,
+                results=self.results,
+            )
 
     def results_as_markdown(self) -> str:
         """

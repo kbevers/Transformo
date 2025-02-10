@@ -12,6 +12,7 @@ import pytest
 
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
+from transformo.operators import DummyOperator
 
 # pylint: disable=redefined-outer-name
 
@@ -125,3 +126,11 @@ def datasource(datasource_factory: Callable) -> DataSource:
     Datasource fixture.
     """
     return datasource_factory()
+
+
+@pytest.fixture()
+def dummy_operator() -> DummyOperator:
+    """
+    A dumb operator
+    """
+    return DummyOperator(name="Dummy")
