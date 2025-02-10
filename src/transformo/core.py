@@ -49,7 +49,7 @@ class DataSource(pydantic.BaseModel):
 
         super().__init__(coordinates=coordinates, name=name, **kwargs)
 
-    def __add__(self, other) -> DataSource:
+    def __add__(self, other: DataSource) -> DataSource:
         """
         Add two `DataSource`s.
 
@@ -57,8 +57,18 @@ class DataSource(pydantic.BaseModel):
         joined together. The returned object is a generic `DataSource`,
         no matter what subclass of `DataSource` the two sources are created from.
         """
-        # new_coordinate_list = self.coordinates + other.coordinates
-        # return DataSource(coordinates=new_coordinate_list)
+        # if either of the two DataSource's are empty there's no need to add them
+        if not other.coordinates and self.coordinates:
+            return self
+
+        if not self.coordinates and other.coordinates:
+            return other
+
+        # if both are empty a single empty DataSource is returned
+        if not self.coordinates and not other.coordinates:
+            return DataSource(None)
+
+        # at this point both DataSources contain valid data and we can combine them
         return CombinedDataSource(self, other)
 
     def __hash__(self) -> int:

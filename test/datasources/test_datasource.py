@@ -66,6 +66,29 @@ def test_datasource_update_coordinates(datasource: DataSource) -> None:
         datasource.update_coordinates(too_many_coordiantes)
 
 
+def test_datasource_sum(datasource_factory: DataSource) -> None:
+    """
+    Test DataSource.__sum__
+
+    In particular the edge cases where at least one empty DataSource is part
+    of the summation.
+    """
+
+    ds1 = datasource_factory()
+    ds2 = datasource_factory()
+
+    none_sum = DataSource(None) + DataSource(None)
+    assert not none_sum.coordinates
+
+    assert ds1 + DataSource(None) is ds1
+    assert DataSource(None) + ds1 is ds1
+
+    sum_ds = ds1 + ds2
+
+    assert isinstance(sum_ds, CombinedDataSource)
+    assert len(sum_ds.coordinates) == len(ds1.coordinates) + len(ds2.coordinates)
+
+
 def test_combineddatasource(datasource_factory: DataSource) -> None:
     """
     Test mechanincs of CombinedDataSource.
