@@ -43,7 +43,13 @@ class DummyPresenter(Presenter):
 
     type: Literal["dummy_presenter"] = "dummy_presenter"
 
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Evaluate `results` created by `operators`.
         """

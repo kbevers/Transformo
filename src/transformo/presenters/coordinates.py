@@ -30,7 +30,13 @@ class CoordinatePresenter(Presenter):
         self._operator_titles: list[str] = []
         self._steps: list[dict[str, list[float | None]]] = []
 
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Parse coordinates from `results`.
 
@@ -44,7 +50,7 @@ class CoordinatePresenter(Presenter):
         Pipeline.
         """
         steps = []
-        for ds in results:
+        for ds in [source_data, *results, target_data]:
             data = {}
             for c in ds.coordinates:
                 data[c.station] = [c.x, c.y, c.z, c.t]
@@ -102,14 +108,20 @@ class ResidualPresenter(Presenter):
 
         self._data: dict = {}
 
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Residuals between the target coordinates and coordinates from final step of
         pipeline.
         """
         stations = results[0].stations
-        target = results[-1].coordinate_matrix
-        model = results[-2].coordinate_matrix
+        target = target_data.coordinate_matrix
+        model = results[-1].coordinate_matrix
 
         residuals = np.subtract(target, model)
         residual_norms = [np.linalg.norm(r) for r in residuals]
@@ -203,15 +215,20 @@ class TopocentricResidualPresenter(Presenter):
         # set up degrees -> cartesian converter
         self._cart_transformer = Transformer.from_projstring("+proj=cart +ellps=GRS80")
 
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Residuals between the target coordinates and coordinates from final step of
         pipeline.
         """
         stations = results[0].stations
-        target = results[-1].coordinate_matrix
-        model = results[-2].coordinate_matrix
-        # residuals: CoordinateMatrix = None
+        target = target_data.coordinate_matrix
+        model = results[-1].coordinate_matrix
 
         if self.coordinate_type in (CoordinateType.DEGREES, CoordinateType.CARTESIAN):
             # We can leverage PROJ's "topocentric" operation for this.
@@ -219,7 +236,8 @@ class TopocentricResidualPresenter(Presenter):
             # we can feed the transformed coordinate to the operation which
             # will then return the topocentric residual.
             # It goes something like this:
-            # echo 3513638.5518   778956.1856   5248216.2445 | cct +proj=topocentric +X_0=3513638.5605 +Y_0=778956.1839 +Z_0=5248216.2482
+            #   echo 3513638.5518 778956.1856 5248216.2445 | cct +proj=topocentric \
+            #     +X_0=3513638.5605 +Y_0=778956.1839 +Z_0=5248216.2482
             if self.coordinate_type == CoordinateType.DEGREES:
                 target = self._cart_transformer.transform_many(target)
                 model = self._cart_transformer.transform_many(model)
@@ -254,8 +272,6 @@ class TopocentricResidualPresenter(Presenter):
         self._data["stats"]["std"] = (
             list(np.std(residuals, axis=0)) + [np.std(norms_2d)] + [np.mean(norms_3d)]
         )
-
-        # print(self._data["stats"])
 
     def as_json(self) -> str:
         return json.dumps(self._data)

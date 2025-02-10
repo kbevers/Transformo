@@ -381,7 +381,13 @@ class Presenter(pydantic.BaseModel):
         return tuple(set(subclasses))
 
     @abstractmethod
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Evaluate information from operators and resulting datasources and store in
         internal data container for use in program output.

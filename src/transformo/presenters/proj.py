@@ -26,7 +26,13 @@ class PROJPresenter(Presenter):
 
         self._output: dict[str, str] = {}
 
-    def evaluate(self, operators: list[Operator], results: list[DataSource]) -> None:
+    def evaluate(
+        self,
+        operators: list[Operator],
+        source_data: DataSource,
+        target_data: DataSource,
+        results: list[DataSource],
+    ) -> None:
         """
         Parse parameters from `operators`.
 

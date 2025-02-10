@@ -21,17 +21,30 @@ def test_proj_presenter():
     )
 
     presenter_with_no_operators = PROJPresenter()
-    presenter_with_no_operators.evaluate(operators=[], results=[])
+    presenter_with_no_operators.evaluate(
+        operators=[],
+        source_data=None,
+        target_data=None,
+        results=[],
+    )
 
     assert presenter_with_no_operators.as_json() == '{"projstring": "+proj=noop"}'
 
     presenter_with_one_operator = PROJPresenter()
-    presenter_with_one_operator.evaluate(operators=[helmert], results=[])
+    presenter_with_one_operator.evaluate(
+        operators=[helmert],
+        source_data=None,
+        target_data=None,
+        results=[],
+    )
     assert presenter_with_one_operator.as_json() == '{"projstring": "+proj=noop"}'
 
     presenter_with_several_operators = PROJPresenter()
     presenter_with_several_operators.evaluate(
-        operators=[dummy, helmert_with_one_params, helmert_with_params], results=[]
+        operators=[dummy, helmert_with_one_params, helmert_with_params],
+        source_data=None,
+        target_data=None,
+        results=[],
     )
 
     expected_pipeline = (
@@ -66,6 +79,8 @@ Transformation parameters given as a [PROJ](https://proj.org/) string.
             helmert_with_params,
             proj_with_pipeline,
         ],
+        source_data=None,
+        target_data=None,
         results=[],
     )
     expected_pipeline = (

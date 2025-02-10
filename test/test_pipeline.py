@@ -147,21 +147,28 @@ def test_pipeline_access() -> None:
 
     pipeline.process()
 
-    # check expected residuals
     results = pipeline.results
+    source = pipeline.all_source_data
+    target = pipeline.all_target_data
+
+    # check expected residuals
+    assert len(results) == 2  # we have added two operators to the pipeline
+
     # difference from source to step one - we expect a y-offset of 150 m,
     # as specified with the given parameter for `helmert_transformation`
-    assert results[1].coordinates[0].x - results[0].coordinates[0].x == 0
-    assert results[1].coordinates[0].y - results[0].coordinates[0].y == 150
-    assert results[1].coordinates[0].z - results[0].coordinates[0].z == 0
+    assert results[0].coordinates[0].x - source.coordinates[0].x == 0
+    assert results[0].coordinates[0].y - source.coordinates[0].y == 150
+    assert results[0].coordinates[0].z - source.coordinates[0].z == 0
+
     # difference between step two and one
-    assert results[2].coordinates[0].x - results[1].coordinates[0].x == 10
-    assert results[2].coordinates[0].y - results[1].coordinates[0].y == 50
-    assert results[2].coordinates[0].z - results[1].coordinates[0].z == 3000
+    assert results[1].coordinates[0].x - results[0].coordinates[0].x == 10
+    assert results[1].coordinates[0].y - results[0].coordinates[0].y == 50
+    assert results[1].coordinates[0].z - results[0].coordinates[0].z == 3000
+
     # difference between step two and target coordinates
-    assert results[3].coordinates[0].x - results[2].coordinates[0].x == 0
-    assert results[3].coordinates[0].y - results[2].coordinates[0].y == 0
-    assert results[3].coordinates[0].z - results[2].coordinates[0].z == 0
+    assert target.coordinates[0].x - results[1].coordinates[0].x == 0
+    assert target.coordinates[0].y - results[1].coordinates[0].y == 0
+    assert target.coordinates[0].z - results[1].coordinates[0].z == 0
 
 
 def test_pipeline_results_as_markdown(files: dict) -> None:
