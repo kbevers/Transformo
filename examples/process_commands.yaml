@@ -1,0 +1,36 @@
+# Demonstrate the use of the pre- and post-processing commands.
+# Any command that is available in the system PATH should be
+# possible to execute through Transformo. This example mainly
+# shows the syntax of this feature set but in a production
+# setting it could be used to prepare data before using it as
+# datasources or perhaps plotting statitics in a post-processing
+# command based on the output of a Presenter.
+#
+# Note that output the processing commands is withheld unless
+# Transformo is called with the `-v` flag that increases verbosity.
+
+pre_processing_commands:
+  - echo This command is process before the pipeline.
+
+source_data:
+- name: Coordinates determined using Bernes 5.2
+  type: bernese_crd
+  filename: test/data/dk_bernese52.crd
+  discard_flags: [W] # Flags are given as a list. Flags are separated by commas.
+
+target_data:
+- name: Coordinates determined using Bernes 5.4
+  type: bernese_crd
+  filename: test/data/dk_bernese54.crd
+  discard_flags: [W]
+
+operators:
+- name: null
+  type: dummy_operator
+
+presenters:
+- type: dummy_presenter
+
+post_processing_commands:
+  - echo This command is processed after the pipeline.
+  - echo So is this one.
