@@ -22,6 +22,7 @@ import transformo.presenters
 from transformo._typing import (
     CoordinateMatrix,
     DataSourceLike,
+    JSONFileCreator,
     OperatorLike,
     PresenterLike,
 )
@@ -164,6 +165,9 @@ class Pipeline(pydantic.BaseModel):
                 target_data=self.all_target_data,
                 results=self.results,
             )
+
+            if isinstance(presenter, JSONFileCreator):
+                presenter.create_json_file()
 
     def results_as_markdown(self) -> str:
         """

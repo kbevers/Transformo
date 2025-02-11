@@ -5,6 +5,7 @@ Presenters related to coordinates.
 from __future__ import annotations
 
 import json
+import pathlib
 from enum import Enum
 from typing import Literal
 
@@ -16,12 +17,23 @@ from transformo.core import DataSource, Operator, Presenter, Transformer
 from . import construct_markdown_table
 
 
+def _raise_exception_if_file_cant_be_created(filename: pathlib.Path):
+    """Throws a FileNotFoundError if the file can't be opened"""
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("")
+    finally:
+        if filename.exists():
+            filename.unlink()
+
+
 class CoordinatePresenter(Presenter):
     """
     Create lists of coordinates for all stages of a pipeline.
     """
 
     type: Literal["coordinate_presenter"] = "coordinate_presenter"
+    json_file: pathlib.Path | None = None
 
     def __init__(self, **kwargs) -> None:
         """."""
@@ -29,6 +41,9 @@ class CoordinatePresenter(Presenter):
 
         self._operator_titles: list[str] = []
         self._steps: list[dict[str, list[float | None]]] = []
+
+        if self.json_file:
+            _raise_exception_if_file_cant_be_created(self.json_file)
 
     def evaluate(
         self,
@@ -67,6 +82,14 @@ class CoordinatePresenter(Presenter):
     def as_json(self) -> str:
         return json.dumps(self._steps)
 
+    def create_json_file(self) -> None:
+        """Output data as a JSON-file"""
+        if not self.json_file:
+            return None
+
+        with open(self.json_file, "w", encoding="utf-8") as f:
+            json.dump(self._steps, f)
+
     def as_markdown(self) -> str:
         fmt = ".4f"
         header = ["Station", "x", "y", "z", "t"]
@@ -101,10 +124,14 @@ class ResidualPresenter(Presenter):
     """
 
     type: Literal["residual_presenter"] = "residual_presenter"
+    json_file: pathlib.Path | None = None
 
     def __init__(self, **kwargs) -> None:
         """."""
         super().__init__(**kwargs)
+
+        if self.json_file:
+            _raise_exception_if_file_cant_be_created(self.json_file)
 
         self._data: dict = {}
 
@@ -140,6 +167,14 @@ class ResidualPresenter(Presenter):
 
     def as_json(self) -> str:
         return json.dumps(self._data)
+
+    def create_json_file(self) -> None:
+        """Output data as a JSON-file"""
+        if not self.json_file:
+            return None
+
+        with open(self.json_file, "w", encoding="utf-8") as f:
+            json.dump(self._data, f)
 
     def as_markdown(self) -> str:
         fmt = "< 10.3g"  # three significant figures, could potentially be an option
@@ -205,10 +240,14 @@ class TopocentricResidualPresenter(Presenter):
     type: Literal["topocentricresidual_presenter"] = "topocentricresidual_presenter"
 
     coordinate_type: CoordinateType
+    json_file: pathlib.Path | None = None
 
     def __init__(self, coordinate_type: CoordinateType, **kwargs) -> None:
         """."""
         super().__init__(coordinate_type=coordinate_type, **kwargs)
+
+        if self.json_file:
+            _raise_exception_if_file_cant_be_created(self.json_file)
 
         self._data: dict = {}
 
@@ -275,6 +314,14 @@ class TopocentricResidualPresenter(Presenter):
 
     def as_json(self) -> str:
         return json.dumps(self._data)
+
+    def create_json_file(self) -> None:
+        """Output data as a JSON-file"""
+        if not self.json_file:
+            return None
+
+        with open(self.json_file, "w", encoding="utf-8") as f:
+            json.dump(self._data, f)
 
     def as_markdown(self) -> str:
         # TODO: Rewrite help text

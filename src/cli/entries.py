@@ -116,7 +116,7 @@ def main(  # pylint: disable=too-many-arguments
         # error output presented to the user, so pylint's good advice about
         # re-raising the exceptions are not applicable here.
         except FileNotFoundError as error:
-            logger.error(f"File not found: {error.filename}")
+            logger.error(f"File or directory not found: {error.filename}")
             raise SystemExit(1)
 
         except ValidationError as error:

@@ -6,7 +6,8 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Protocol
+from os import PathLike
+from typing import Annotated, Any, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -92,3 +93,24 @@ class PresenterLike(Protocol):
         Store parsed information from operators and resulting datasources in
         internal data container for further processing.
         """
+
+
+@runtime_checkable
+class JSONFileCreator(Protocol):
+    """
+    Presenter's implementing this protocol can create a JSON-file.
+
+    If a class implements this protocol, an attempt at creating a JSON file
+    will be made during the Pipeline processing, after evaluating the
+    Presenter's.
+
+    When implementing a JSONFileCreator, it should be checked in __init__()
+    if `json_file` can be created. This will make the pipeline serializer fail
+    when the file can't be created. In most cases this will be because the path
+    includes a directory that doesn't exists.
+    """
+
+    json_file: PathLike | None
+
+    def create_json_file(self) -> None:
+        """Create a JSON-file."""
