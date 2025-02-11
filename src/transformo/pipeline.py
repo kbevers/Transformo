@@ -4,7 +4,9 @@ Transformo pipeline classes.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import subprocess
 from datetime import datetime
 from typing import Annotated, Union
 
@@ -19,6 +21,7 @@ import transformo
 import transformo.datasources
 import transformo.operators
 import transformo.presenters
+from transformo import logger
 from transformo._typing import (
     CoordinateMatrix,
     DataSourceLike,
@@ -54,12 +57,16 @@ class Pipeline(pydantic.BaseModel):
         ]
     ]
 
+    pre_processing_commands: list[str] = []
+    post_processing_commands: list[str] = []
+
     def __init__(
         self,
         source_data: list[DataSourceLike],
         target_data: list[DataSourceLike],
         operators: list[OperatorLike],
         presenters: list[PresenterLike],
+        **kwargs,
     ) -> None:
         """Set up for pipelines"""
         super().__init__(
@@ -67,6 +74,7 @@ class Pipeline(pydantic.BaseModel):
             target_data=target_data,
             operators=operators,
             presenters=presenters,
+            **kwargs,
         )
 
         # set up combined datasources for both source and target data
@@ -143,6 +151,9 @@ class Pipeline(pydantic.BaseModel):
         Process all `Operator`s in the pipeline and pass the results to the
         `Presenter`s for evaluation.
         """
+        for cmd in self.pre_processing_commands:
+            transformo.run_command(cmd)
+
         current_step_coordinates = self.source_coordinates
         for operator in self.operators:
             if operator.can_estimate:
@@ -172,6 +183,9 @@ class Pipeline(pydantic.BaseModel):
 
             if isinstance(presenter, GeoJSONFileCreator):
                 presenter.create_geojson_file()
+
+        for cmd in self.post_processing_commands:
+            transformo.run_command(cmd)
 
     def results_as_markdown(self) -> str:
         """
