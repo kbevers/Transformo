@@ -329,7 +329,7 @@ class TopocentricResidualPresenter(Presenter):
 
         fmt = "< 10.3g"  # three significant figures, could potentially be an option
 
-        header = ["Station", "North", "East", "Up", "2D residual", "3D residual"]
+        header = ["Station", "North", "East", "Up", "Planar residual", "Total residual"]
         rows = []
         for station, residuals in self._data["residuals"].items():
             row = [station, *[format(r, fmt) for r in residuals]]
@@ -337,16 +337,17 @@ class TopocentricResidualPresenter(Presenter):
 
         text = (
             "### Station coordinate residuals\n\n"
-            "Residuals of the modelled coordinates as compared to "
-            "target cooordinates. The table contains simple "
+            "Residuals in topocentric space of the modelled coordinates as "
+            "compared to target cooordinates. The table contains coordinate "
             "differences of the individual coordinate components "
-            "as well as the length (norm) of the residual vector.\n\n"
+            "as well as the length (norm) of the residual vector, "
+            "both in the plane and across all dimensions.\n\n"
         )
         text += construct_markdown_table(header, rows)
 
         text += "\n\n### Residual statistics\n"
 
-        header = ["Measure", "Rx", "Ry", "Rz", "2D norm", "3D norm"]
+        header = ["Measure", "North", "East", "Up", "Planar residual", "Total residual"]
         rows = []
         for measure, values in self._data["stats"].items():
             row = [measure, *[format(v, fmt) for v in values]]
