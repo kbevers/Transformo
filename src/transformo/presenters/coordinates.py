@@ -13,6 +13,7 @@ import numpy as np
 
 from transformo._typing import CoordinateMatrix
 from transformo.core import DataSource, Operator, Presenter, Transformer
+from transformo.datatypes import Coordinate
 
 from . import construct_markdown_table
 
@@ -22,6 +23,8 @@ def _raise_exception_if_file_cant_be_created(filename: pathlib.Path):
     try:
         with open(filename, "w", encoding="utf-8") as f:
             f.write("")
+    # open() will raise the exception, so we don't have to re-raise it here
+    # but we still need to clean up:
     finally:
         if filename.exists():
             filename.unlink()
@@ -34,6 +37,7 @@ class CoordinatePresenter(Presenter):
 
     type: Literal["coordinate_presenter"] = "coordinate_presenter"
     json_file: pathlib.Path | None = None
+    geojson_file: pathlib.Path | None = None
 
     def __init__(self, **kwargs) -> None:
         """."""
@@ -44,6 +48,10 @@ class CoordinatePresenter(Presenter):
 
         if self.json_file:
             _raise_exception_if_file_cant_be_created(self.json_file)
+
+        if self.geojson_file:
+            _raise_exception_if_file_cant_be_created(self.geojson_file)
+            self._geojson_features: list[dict] = []
 
     def evaluate(
         self,
@@ -79,16 +87,49 @@ class CoordinatePresenter(Presenter):
 
         self._operator_titles = operator_titles
 
+        if self.geojson_file:
+            for coordinate in target_data.coordinates:
+                self._geojson_features.append(coordinate.geojson_feature())
+
     def as_json(self) -> str:
         return json.dumps(self._steps)
 
     def create_json_file(self) -> None:
         """Output data as a JSON-file"""
-        if not self.json_file:
+        if self.json_file:
+            with open(self.json_file, "w", encoding="utf-8") as f:
+                json.dump(self._steps, f)
+
+    def create_geojson_file(self) -> None:
+        """Output data as a GeoJSON-file."""
+
+        if not self.geojson_file:
             return None
 
-        with open(self.json_file, "w", encoding="utf-8") as f:
-            json.dump(self._steps, f)
+        # prepare data structure
+        for feature in self._geojson_features:
+            key = feature["properties"]["station"]
+            for i, step in enumerate(self._steps):
+                x, y, z, _ = step[key]
+                postfix = str(i)
+                if i == 0:
+                    postfix = "source"
+                if i == len(self._steps) - 1:
+                    postfix = "target"
+
+                feature["properties"][f"x_{postfix}"] = x
+                feature["properties"][f"y_{postfix}"] = y
+                feature["properties"][f"z_{postfix}"] = z
+
+        geojson = {
+            "type": "FeatureCollection",
+            "features": self._geojson_features,
+        }
+
+        with open(self.geojson_file, "w", encoding="utf-8") as f:
+            json.dump(geojson, f)
+
+        return None
 
     def as_markdown(self) -> str:
         fmt = ".4f"
@@ -125,6 +166,7 @@ class ResidualPresenter(Presenter):
 
     type: Literal["residual_presenter"] = "residual_presenter"
     json_file: pathlib.Path | None = None
+    geojson_file: pathlib.Path | None = None
 
     def __init__(self, **kwargs) -> None:
         """."""
@@ -132,6 +174,9 @@ class ResidualPresenter(Presenter):
 
         if self.json_file:
             _raise_exception_if_file_cant_be_created(self.json_file)
+        if self.geojson_file:
+            _raise_exception_if_file_cant_be_created(self.geojson_file)
+            self._geojson_features: list[dict] = []
 
         self._data: dict = {}
 
@@ -165,16 +210,42 @@ class ResidualPresenter(Presenter):
             np.std(residual_norms)
         ]
 
+        if self.geojson_file:
+            for coordinate in target_data.coordinates:
+                self._geojson_features.append(coordinate.geojson_feature())
+
     def as_json(self) -> str:
         return json.dumps(self._data)
 
     def create_json_file(self) -> None:
         """Output data as a JSON-file"""
-        if not self.json_file:
+        if self.json_file:
+            with open(self.json_file, "w", encoding="utf-8") as f:
+                json.dump(self._data, f)
+
+    def create_geojson_file(self) -> None:
+        """Output data as a GeoJSON-file."""
+
+        if not self.geojson_file:
             return None
 
-        with open(self.json_file, "w", encoding="utf-8") as f:
-            json.dump(self._data, f)
+        # prepare data structure
+        for feature in self._geojson_features:
+            key = feature["properties"]["station"]
+            x, y, z, norm = self._data["residuals"][key]
+
+            feature["properties"]["residual_x"] = x
+            feature["properties"]["residual_y"] = y
+            feature["properties"]["residual_z"] = z
+            feature["properties"]["residual_total"] = norm
+
+        geojson = {
+            "type": "FeatureCollection",
+            "features": self._geojson_features,
+        }
+
+        with open(self.geojson_file, "w", encoding="utf-8") as f:
+            json.dump(geojson, f)
 
     def as_markdown(self) -> str:
         fmt = "< 10.3g"  # three significant figures, could potentially be an option
@@ -241,6 +312,7 @@ class TopocentricResidualPresenter(Presenter):
 
     coordinate_type: CoordinateType
     json_file: pathlib.Path | None = None
+    geojson_file: pathlib.Path | None = None
 
     def __init__(self, coordinate_type: CoordinateType, **kwargs) -> None:
         """."""
@@ -248,6 +320,9 @@ class TopocentricResidualPresenter(Presenter):
 
         if self.json_file:
             _raise_exception_if_file_cant_be_created(self.json_file)
+        if self.geojson_file:
+            _raise_exception_if_file_cant_be_created(self.geojson_file)
+            self._geojson_features: list[dict] = []
 
         self._data: dict = {}
 
@@ -312,6 +387,10 @@ class TopocentricResidualPresenter(Presenter):
             list(np.std(residuals, axis=0)) + [np.std(norms_2d)] + [np.mean(norms_3d)]
         )
 
+        if self.geojson_file:
+            for coordinate in target_data.coordinates:
+                self._geojson_features.append(coordinate.geojson_feature())
+
     def as_json(self) -> str:
         return json.dumps(self._data)
 
@@ -323,10 +402,32 @@ class TopocentricResidualPresenter(Presenter):
         with open(self.json_file, "w", encoding="utf-8") as f:
             json.dump(self._data, f)
 
-    def as_markdown(self) -> str:
-        # TODO: Rewrite help text
-        # TODO: Redo markdown headers
+    def create_geojson_file(self) -> None:
+        """Output data as a GeoJSON-file."""
 
+        if not self.geojson_file:
+            return None
+
+        # prepare data structure
+        for feature in self._geojson_features:
+            key = feature["properties"]["station"]
+            x, y, z, norm_2d, norm_3d = self._data["residuals"][key]
+
+            feature["properties"]["residual_n"] = x
+            feature["properties"]["residual_e"] = y
+            feature["properties"]["residual_u"] = z
+            feature["properties"]["residual_planar"] = norm_2d
+            feature["properties"]["residual_total"] = norm_3d
+
+        geojson = {
+            "type": "FeatureCollection",
+            "features": self._geojson_features,
+        }
+        print(geojson)
+        with open(self.geojson_file, "w", encoding="utf-8") as f:
+            json.dump(geojson, f)
+
+    def as_markdown(self) -> str:
         fmt = "< 10.3g"  # three significant figures, could potentially be an option
 
         header = ["Station", "North", "East", "Up", "Planar residual", "Total residual"]

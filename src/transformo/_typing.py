@@ -114,3 +114,24 @@ class JSONFileCreator(Protocol):
 
     def create_json_file(self) -> None:
         """Create a JSON-file."""
+
+
+@runtime_checkable
+class GeoJSONFileCreator(Protocol):
+    """
+    Presenter's implementing this protocol can create a GeoJSON-file.
+
+    If a class implements this protocol, an attempt at creating a GeoJSON file
+    will be made during the Pipeline processing, after evaluating the
+    Presenter's.
+
+    When implementing a GeoJSONFileCreator, it should be checked in __init__()
+    if `geojson_file` can be created. This will make the pipeline serializer
+    fail when the file can't be created. In most cases this will be because
+    the path includes a directory that doesn't exists.
+    """
+
+    geojson_file: PathLike | None
+
+    def create_geojson_file(self) -> None:
+        """Create a GeoJSON-file."""
