@@ -4,6 +4,7 @@ Tests for transformo.presenters.coordinates
 
 import json
 
+from transformo._typing import GeoJSONFileCreator, JSONFileCreator
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
 from transformo.presenters import (
@@ -14,11 +15,36 @@ from transformo.presenters import (
 )
 
 
-def test_coordinate_presenter(files, dummy_operator):
+def _is_valid_geojson(geojson: dict) -> bool:
+    """Check the validity of a GeoJSON datastructure"""
+
+    if geojson["type"] != "FeatureCollection":
+        return False
+
+    if "features" not in geojson.keys():
+        return False
+
+    for feature in geojson["features"]:
+        if "type" not in feature.keys():
+            return False
+
+        if "properties" not in feature.keys():
+            return False
+
+        if "geometry" not in feature.keys():
+            return False
+
+    return True
+
+
+def test_coordinate_presenter(tmp_path, files, dummy_operator):
     """
     .
     """
-    p = CoordinatePresenter()
+    json_file = tmp_path / "coordinates.json"
+    geojson_file = tmp_path / "coordinates.geojson"
+
+    p = CoordinatePresenter(json_file=json_file, geojson_file=geojson_file)
 
     ds1 = CsvDataSource(filename=files["dk_cors_itrf2014.csv"])
     ds2 = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
@@ -30,6 +56,25 @@ def test_coordinate_presenter(files, dummy_operator):
         results=[ds1],  # emmulate the dummy operator
     )
     results = json.loads(p.as_json())
+
+    # Does this implement the JSONFileCreator protocol correctly?
+    assert isinstance(p, JSONFileCreator)
+
+    # Does this implement the JSONFileCreator protocol correctly?
+    assert isinstance(p, GeoJSONFileCreator)
+
+    p.create_json_file()
+    with open(json_file, "r", encoding="utf-8") as f:
+        json_data = f.read()
+
+    assert json_data == p.as_json()
+
+    p.create_geojson_file()
+    with open(geojson_file, "r", encoding="utf-8") as f:
+        geojson_data = json.loads(f.read())
+
+    assert _is_valid_geojson(geojson_data)
+    assert len(geojson_data["features"]) == len(ds1.stations)
 
     # A few sanity checks of the JSON data
     assert results[1]["BUDP"][0] == ds1.coordinates[0].x
@@ -92,10 +137,12 @@ Source and target coordinates as well as intermediate results shown in tabular f
     assert expected_text == p.as_markdown()
 
 
-def test_residual_presenter(dummy_operator):
+def test_residual_presenter(tmp_path, dummy_operator):
     """
     Test the residual presenter.
     """
+    json_file = tmp_path / "residuals.json"
+    geojson_file = tmp_path / "residuals.geojson"
 
     model = DataSource(
         coordinates=[
@@ -111,7 +158,7 @@ def test_residual_presenter(dummy_operator):
         ]
     )
 
-    presenter = ResidualPresenter()
+    presenter = ResidualPresenter(json_file=json_file, geojson_file=geojson_file)
     presenter.evaluate(
         operators=[dummy_operator],
         source_data=model,
@@ -127,11 +174,30 @@ def test_residual_presenter(dummy_operator):
     print(data)
     print(presenter.as_markdown())
 
+    # Does this implement the JSONFileCreator protocol correctly?
+    assert isinstance(presenter, JSONFileCreator)
 
-def test_topocentricresidual_presenter_degree(dummy_operator):
+    presenter.create_json_file()
+    with open(json_file, "r", encoding="utf-8") as f:
+        json_data = f.read()
+
+    assert json_data == presenter.as_json()
+
+    presenter.create_geojson_file()
+    with open(geojson_file, "r", encoding="utf-8") as f:
+        geojson_data = json.loads(f.read())
+
+    assert _is_valid_geojson(geojson_data)
+    assert len(geojson_data["features"]) == len(model.stations)
+
+
+def test_topocentricresidual_presenter_degree(tmp_path):
     """
     Test the topocentric residual presenter using coordinate type degrees.
     """
+
+    json_file = tmp_path / "enu_residuals.json"
+    geojson_file = tmp_path / "residuals.geojson"
 
     model = DataSource(
         coordinates=[
@@ -146,10 +212,30 @@ def test_topocentricresidual_presenter_degree(dummy_operator):
         ]
     )
 
-    presenter = TopocentricResidualPresenter(coordinate_type=CoordinateType.DEGREES)
+    presenter = TopocentricResidualPresenter(
+        coordinate_type=CoordinateType.DEGREES,
+        json_file=json_file,
+        geojson_file=geojson_file,
+    )
     presenter.evaluate(
         operators=[],
         source_data=model,
         target_data=target,
         results=[model],
     )
+
+    # Does this implement the JSONFileCreator protocol correctly?
+    assert isinstance(presenter, JSONFileCreator)
+
+    presenter.create_json_file()
+    with open(json_file, "r", encoding="utf-8") as f:
+        json_data = f.read()
+
+    assert json_data == presenter.as_json()
+
+    presenter.create_geojson_file()
+    with open(geojson_file, "r", encoding="utf-8") as f:
+        geojson_data = json.loads(f.read())
+
+    assert _is_valid_geojson(geojson_data)
+    assert len(geojson_data["features"]) == len(model.stations)

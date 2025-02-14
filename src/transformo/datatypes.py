@@ -86,6 +86,32 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
 
         return np.multiply(weights, self.w)
 
+    def geojson_feature(self, properties: dict | None = None) -> dict:
+        """
+        Return a basic GeoJSON feature.
+
+        The feature is composed of the station coordinates and name. Additional
+        properties can be added by supplying them in the `properties` dict.
+        """
+        feat: dict = {
+            "type": "Feature",
+            "properties": {
+                "station": self.station,
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    self.x,
+                    self.y,
+                ],
+            },
+        }
+
+        if properties:
+            feat["properties"] = feat["properties"] | properties
+
+        return feat
+
 
 class Parameter:
     """

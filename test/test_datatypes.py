@@ -82,6 +82,37 @@ def test_coordinate_weights_property(coordinate: Coordinate):
     assert isinstance(coordinate.weights, np.ndarray)
 
 
+def test_coordinate_geojson_feature(coordinate: Coordinate):
+    """Test geojson_feature returns valid GeoJSON features."""
+
+    feature = coordinate.geojson_feature()
+
+    print(feature)
+
+    assert feature["geometry"]["coordinates"][0] == coordinate.x
+    assert feature["geometry"]["coordinates"][1] == coordinate.y
+    assert feature["properties"]["station"] == coordinate.station
+
+    # Check that adding auxillary properties works
+    feature_with_properties = coordinate.geojson_feature(
+        properties={
+            "E": 12.3,
+            "N": 4.32,
+            "U": 6.23,
+            "attribute": "value",
+            "station": "STATION",
+        }
+    )
+
+    assert feature_with_properties["properties"]["E"] == 12.3
+    assert feature_with_properties["properties"]["N"] == 4.32
+    assert feature_with_properties["properties"]["U"] == 6.23
+    assert feature_with_properties["properties"]["attribute"] == "value"
+
+    # verify that origin properties are overriden by those in `properties`
+    assert feature_with_properties["properties"]["station"] == "STATION"
+
+
 def test_parameter():
     """Test functionality of Parameter"""
 
