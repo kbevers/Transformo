@@ -219,3 +219,25 @@ def test_pipeline_results_as_json(files: dict) -> None:
 
     assert "PROJ" in data.keys()
     assert "Coordinates" in data.keys()
+
+
+def test_pipeline_processing_commands(caplog, datasource: DataSource) -> None:
+    """
+    Test the use of pre- and post-processing commands in a Pipeline.
+    """
+    pipeline = Pipeline(
+        source_data=[datasource],
+        target_data=[datasource],
+        operators=[DummyOperator()],
+        presenters=[DummyPresenter()],
+        pre_processing_commands=["echo pre-process", "python --version"],
+        post_processing_commands=["echo post-process 1", "echo post-process 2"],
+    )
+
+    pipeline.process()
+
+    log_captures = [msg for (_, _, msg) in caplog.record_tuples]
+
+    assert "pre-process" in log_captures
+    assert "post-process 1" in log_captures
+    assert "post-process 2" in log_captures
