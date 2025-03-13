@@ -75,9 +75,9 @@ def test_coordinate_vector_property(coordinate: Coordinate):
 def test_coordinate_weights_property(coordinate: Coordinate):
     """Test vector property of Coordinate"""
 
-    assert coordinate.weights[0] == 1 / coordinate.sx * coordinate.w
-    assert coordinate.weights[1] == 1 / coordinate.sy * coordinate.w
-    assert coordinate.weights[2] == 1 / coordinate.sz * coordinate.w
+    assert coordinate.weights[0] == 1 / coordinate.sx**2 * coordinate.w
+    assert coordinate.weights[1] == 1 / coordinate.sy**2 * coordinate.w
+    assert coordinate.weights[2] == 1 / coordinate.sz**2 * coordinate.w
 
     assert isinstance(coordinate.weights, np.ndarray)
 

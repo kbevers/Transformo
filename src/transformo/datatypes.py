@@ -79,10 +79,11 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
         """
         Weights given as Numpy vector (1D array).
 
-        Weights are calculated as the inverse of the standard deviation on each
-        coordinate element multiplied by the weight supplied in Coordinate.w.
+        Weights are calculated as the inverse of the variance (standard deviation squared)
+        on each coordinate element multiplied by the station weight supplied in
+        Coordinate.w.
         """
-        weights = np.divide(1, self.stddev)
+        weights = np.divide(1, np.square(self.stddev))
 
         return np.multiply(weights, self.w)
 
