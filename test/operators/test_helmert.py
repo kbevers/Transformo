@@ -47,6 +47,50 @@ def test_helmerttranslation_as_estimator():
     assert np.prod(helmert_with_no_parameters.T) == 1
 
 
+def test_helmerttranslation_estimation_with_weights():
+    """
+    Test that parameters are estimated correctly when using weights.
+    """
+
+    source_coordinates = np.array(
+        [
+            [100, 100, 100],
+            [50, 50, 50],
+            [50, 50, 50],
+        ]
+    )
+    target_coordinates = np.zeros(shape=(3, 3))
+
+    source_weights = np.array(
+        [
+            [2, 0.5, 0.0],
+            [1, 1, 1],
+            [1, 1, 1],
+        ]
+    )
+    target_weights = np.array(
+        [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+        ]
+    )
+
+    helmert = HelmertTranslation()
+    helmert.estimate(
+        source_coordinates, target_coordinates, source_weights, target_weights
+    )
+
+    print(helmert.T)
+
+    # a negative value is expected because we look at coordinate difference,
+    # and since the target coordinates are zero we need to subtract from the source
+    # to get where we are going.
+    assert helmert.T[0] == -(100 * 2 + 50 + 50) / (2 + 1 + 1)
+    assert helmert.T[1] == -(100 * 0.5 + 50 + 50) / (0.5 + 1 + 1)
+    assert helmert.T[2] == -(50 + 50) / 2
+
+
 def test_helmerttranslation_as_operator():
     """
     Test that HelmertTranslation works as an operator when given parameters.

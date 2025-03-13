@@ -3,9 +3,62 @@ Tests of basic data structures like `Coordinate`.
 """
 
 import numpy as np
+import pydantic
 import pytest
 
 from transformo.datatypes import Coordinate, Parameter
+
+
+def test_coordinate_field_limits():
+    """Test the various limits set on the Coordinate fields."""
+
+    def parameters(**kwargs):
+        """Override one or more sensible default parameters"""
+        params = {
+            "station": "TEST",
+            "t": 2025.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "sx": 0.0,
+            "sy": 0.0,
+            "sz": 0.0,
+            "w": 1.0,
+        }
+
+        for key, value in kwargs.items():
+            params[key] = value
+
+        return params
+
+    assert isinstance(Coordinate(**parameters()), Coordinate)
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(t=-2000.0))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(w=-1.0))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(w=np.nan))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(w=np.inf))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(sx=-1.0))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(sy=-1.0))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(sz=-1.0))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(sx=np.nan))
+
+    with pytest.raises(pydantic.ValidationError):
+        Coordinate(**parameters(sx=np.inf))
 
 
 def test_coordinate_from_str():

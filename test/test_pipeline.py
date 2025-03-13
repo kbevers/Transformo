@@ -5,6 +5,8 @@ Test the pipeline class.
 import json
 from typing import Callable
 
+import pytest
+
 from transformo.datasources import CsvDataSource, DataSource
 from transformo.datatypes import Coordinate
 from transformo.operators import DummyOperator, HelmertTranslation
@@ -113,7 +115,7 @@ def test_pipeline_estimation_using_helmert_translation() -> None:
 
     print(helmert_transformation.parameters)
     print(helmert_estimation.parameters)
-    assert helmert_estimation.y == 50
+    assert helmert_estimation.y == pytest.approx(50)
 
 
 def test_pipeline_access() -> None:
@@ -161,14 +163,20 @@ def test_pipeline_access() -> None:
     assert results[0].coordinates[0].z - source.coordinates[0].z == 0
 
     # difference between step two and one
-    assert results[1].coordinates[0].x - results[0].coordinates[0].x == 10
-    assert results[1].coordinates[0].y - results[0].coordinates[0].y == 50
-    assert results[1].coordinates[0].z - results[0].coordinates[0].z == 3000
+    assert results[1].coordinates[0].x - results[0].coordinates[0].x == pytest.approx(
+        10
+    )
+    assert results[1].coordinates[0].y - results[0].coordinates[0].y == pytest.approx(
+        50
+    )
+    assert results[1].coordinates[0].z - results[0].coordinates[0].z == pytest.approx(
+        3000
+    )
 
     # difference between step two and target coordinates
-    assert target.coordinates[0].x - results[1].coordinates[0].x == 0
-    assert target.coordinates[0].y - results[1].coordinates[0].y == 0
-    assert target.coordinates[0].z - results[1].coordinates[0].z == 0
+    assert target.coordinates[0].x - results[1].coordinates[0].x == pytest.approx(0)
+    assert target.coordinates[0].y - results[1].coordinates[0].y == pytest.approx(0)
+    assert target.coordinates[0].z - results[1].coordinates[0].z == pytest.approx(0)
 
 
 def test_pipeline_results_as_markdown(files: dict) -> None:

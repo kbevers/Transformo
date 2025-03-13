@@ -111,6 +111,23 @@ class DataSource(pydantic.BaseModel):
         )
 
     @property
+    def weights_matrix(self) -> CoordinateMatrix:
+        """
+        A matrix of weights for each of the coordinate elements.
+
+        Weights are determined based on the coordinate uncertainties and the
+        station weights given in the DataSource. It is a combined weight, so to speak.
+
+        The coordinate uncertainties are assumed to be standard deviations. The
+        combined weights in the matrix are determined by
+
+            weight = (1 / stddev**2) * station_weight
+        """
+        return np.array(
+            [c.weights for c in self.coordinates]  # pylint: disable=not-an-iterable
+        )
+
+    @property
     def stations(self) -> list[str]:
         """
         Get list of stations.
@@ -280,9 +297,10 @@ class Operator(pydantic.BaseModel):
         # given as input. If `estimate()` is implemented *some* parameters
         # will be estimated and stored in the `Operator` but they will be
         # discarded when `estimate()` is executed again with proper input.
-        zero_matrix = np.zeros(shape=(4, 3))
+        zeros = np.zeros(shape=(4, 3))
+        ones = np.ones(shape=(4, 3))
         try:
-            self.estimate(zero_matrix, zero_matrix, zero_matrix, zero_matrix)
+            self.estimate(zeros, zeros, ones, ones)
         except NotImplementedError:
             return False
 

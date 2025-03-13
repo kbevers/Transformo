@@ -146,7 +146,7 @@ form. The following information can be read with a datasource:
     1. Station name
     2. Coordinate tuple (x,y,z)
     3. Uncertainty estimate of the coordinate (standard deviation)
-    4. Weight [0;1]
+    4. Weight (>= 0.0)
     5. Timestamp
 
 Source and target coordinate data is handled by different datasource instances. At

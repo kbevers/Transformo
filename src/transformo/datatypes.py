@@ -34,7 +34,7 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
     sz: float = pydantic.Field(ge=0.0, allow_inf_nan=False, strict=True)
 
     # coordinate weight
-    w: float = pydantic.Field(1.0, ge=0.0, le=1.0, allow_inf_nan=False, strict=True)
+    w: float = pydantic.Field(1.0, ge=0.0, allow_inf_nan=False, strict=True)
 
     @classmethod
     def from_str(  # pylint: disable=too-many-arguments
@@ -83,7 +83,15 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
         on each coordinate element multiplied by the station weight supplied in
         Coordinate.w.
         """
-        weights = np.divide(1, np.square(self.stddev))
+
+        # Deal with zero-divisions. If a coordinate value has an uncertainty of 0
+        # it is generally understood to be a defining coordinate, i.e. it has no
+        # uncertainty. That can lead to various numerical issues, so we replace the
+        # zeroes with a value very close to zero.
+        epsilon = 1e-15
+        non_zero_stddev = np.where(self.stddev == 0, epsilon, self.stddev)
+
+        weights = np.divide(1, np.square(non_zero_stddev))
 
         return np.multiply(weights, self.w)
 
