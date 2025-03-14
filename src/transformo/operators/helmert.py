@@ -141,8 +141,10 @@ class HelmertTranslation(Operator):
         Weights for source and target coordinates are ignored.
         """
 
-        coordinate_differences = target_coordinates - source_coordinates
-        mean_translation = np.mean(coordinate_differences, axis=0)
+        avg_source = np.average(source_coordinates, axis=0, weights=source_weights)
+        avg_target = np.average(target_coordinates, axis=0, weights=target_weights)
+
+        mean_translation = avg_target - avg_source
 
         self.x = mean_translation[0]
         self.y = mean_translation[1]

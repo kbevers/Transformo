@@ -160,9 +160,8 @@ class Pipeline(pydantic.BaseModel):
                 operator.estimate(
                     current_step_coordinates,
                     self.target_coordinates,
-                    # TODO: Handle weights
-                    None,
-                    None,
+                    self.all_source_data.weights_matrix,
+                    self.all_target_data.weights_matrix,
                 )
             current_step_coordinates = operator.forward(current_step_coordinates)
             current_step_datasource = self.all_source_data.update_coordinates(

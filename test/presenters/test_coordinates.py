@@ -146,15 +146,15 @@ def test_residual_presenter(tmp_path, dummy_operator):
 
     model = DataSource(
         coordinates=[
-            Coordinate("A", 2000, 0, 0, 0, 0, 0, 0),
-            Coordinate("B", 2000, 0, 0, 0, 0, 0, 0),
+            Coordinate("A", 2000, 0, 0, 0, 0.05, 0.05, 0.05),
+            Coordinate("B", 2000, 0, 0, 0, 0.05, 0.05, 0.05),
         ]
     )
 
     target = DataSource(
         coordinates=[
-            Coordinate("A", 2000, 2.5, 2.5, 2.5, 0, 0, 0, 0),
-            Coordinate("B", 2000, 1, 0, 0, 0, 0, 0, 0),
+            Coordinate("A", 2000, 2.5, 2.5, 2.5, 0.05, 0.05, 0.05, 1),
+            Coordinate("B", 2000, 1, 0, 0, 0.05, 0.05, 0.05, 1),
         ]
     )
 
