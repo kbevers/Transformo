@@ -11,7 +11,7 @@ from pydantic.dataclasses import dataclass
 from transformo._typing import ParameterValue
 
 
-@dataclass(frozen=True)
+@dataclass()
 class Coordinate:  # pylint: disable=too-many-instance-attributes
     """Containter for coordinates"""
 

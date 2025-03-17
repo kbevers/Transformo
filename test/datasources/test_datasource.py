@@ -153,3 +153,60 @@ def test_datasource_hash(files) -> None:
     csv2 = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
 
     assert hash(csv1) != hash(csv2)
+
+
+def test_post_init_datasource_wide_overrides(coordinate_factory) -> None:
+    """
+    Test overrides that work on the entire datasource.
+    """
+    n = 2
+    sx = 0.05
+    sy = 0.12
+    sz = 0.52
+    w = 0.7
+    t = 2099.99
+
+    coordinates = [coordinate_factory() for _ in range(n)]
+    ds = DataSource(
+        name="test",
+        coordinates=coordinates,
+        sx=sx,
+        sy=sy,
+        sz=sz,
+        w=w,
+        t=t,
+    )
+
+    for c in ds.coordinates:
+        assert c.sx == sx
+        assert c.sy == sy
+        assert c.sz == sz
+        assert c.w == c.w
+        assert c.t == c.t
+
+
+def test_post_init_datasource_wide_overrides_childs(files) -> None:
+    """
+    Test that overrides work for childs of DataSource.
+    """
+    sx = 0.05
+    sy = 0.12
+    sz = 0.52
+    w = 0.7
+    t = 2099.99
+
+    ds = CsvDataSource(
+        filename=files["dk_cors_etrs89.csv"],
+        sx=sx,
+        sy=sy,
+        sz=sz,
+        w=w,
+        t=t,
+    )
+
+    for c in ds.coordinates:
+        assert c.sx == sx
+        assert c.sy == sy
+        assert c.sz == sz
+        assert c.w == c.w
+        assert c.t == c.t

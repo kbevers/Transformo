@@ -33,6 +33,19 @@ class DataSource(pydantic.BaseModel):
     # when overriding settings etc.
     name: str | None = None
 
+    # standard deviations, uncertainties
+    sx: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sy: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sz: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate weight
+    w: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate epoch
+    t: float | None = pydantic.Field(
+        None, ge=0.0, le=10000.0, allow_inf_nan=False, strict=True
+    )
+
     # coordinates are not included in pipeline serialization
     coordinates: list[Coordinate] = pydantic.Field(default_factory=list, exclude=True)
 
@@ -48,6 +61,74 @@ class DataSource(pydantic.BaseModel):
             coordinates = []
 
         super().__init__(coordinates=coordinates, name=name, **kwargs)
+
+        # See the comment below regarding post initialization.
+        # Execute post initialization if, and only if, self is a DataSource.
+        #
+        # pylint: disable=unidiomatic-typecheck - for once this is what is needed
+        if type(self) is DataSource:
+            self.__post_init__()
+
+    # POST INITIALIZATION
+    #
+    # Implement a post init method, that is run once after the pydantic model
+    # has been serialized AND __init__() of subclasses of DataSource has been
+    # processed. This fascilitates the mechanism of overriding certain
+    # coordinate values across a DataSource.
+    #
+    # The overrides works by using __init_subclass__() to set a decorator on
+    # __init__(). That decorator is defined in __post_init__(). At first, this
+    # might seem like an over-complication that would be solved by using
+    # Pydantic's model_post_init() method the BaseModel. Unfortunately that is
+    # processed as a final step of BaseModel.__init__(), which poses a problem
+    # when a DataSource child is calling super().__init__() in order to
+    # serialize the model.
+    #
+    # Note that this ONLY works on subclasses of a DataSource. To run the post
+    # initialization on a DataSource that is not subclassed, a bit of extra
+    # trickery is needed. See the final lines of DataSource.__init__() above.
+
+    def __init_subclass__(cls, **kwargs):
+
+        def init_decorator(previous_init):
+            def new_init(self, *args, **kwargs):
+                previous_init(self, *args, **kwargs)
+                if isinstance(self, cls):
+                    self.__post_init__()
+
+            return new_init
+
+        cls.__init__ = init_decorator(cls.__init__)
+
+    # def model_post_init(self, __context: Any) -> None:
+    def __post_init__(self) -> None:
+        """
+        Modify DataSource after the initial creation.
+
+        This allow overrides of the original data, for instance by setting
+        a different standard deviation of the coordinates in the DataSource.
+
+        Additionally, station-based overrides can be handled here.
+
+        Do not override this method without calling super().__post_init__().
+        Or better yet, do not override it at all.
+        """
+
+        for c in self.coordinates:
+            if self.sx:
+                c.sx = self.sx
+
+            if self.sy:
+                c.sy = self.sy
+
+            if self.sz:
+                c.sz = self.sz
+
+            if self.w:
+                c.w = self.w
+
+            if self.t is not None:
+                c.t = self.t
 
     def __add__(self, other: DataSource) -> DataSource:
         """
