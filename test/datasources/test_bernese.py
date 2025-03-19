@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pydantic
 import pytest
 
 from transformo.datasources import BerneseCrdDataSource
@@ -81,3 +82,67 @@ def test_crd_datasource_discard_flags(files):
 
     assert len(ds1.stations) == 25
     assert len(ds2.stations) == 9
+
+
+def test_crd_datasource_uncertainties(files):
+    """Check that setting uncertainties works as expected."""
+    sx = 0.0523
+    sy = 0.0452
+    sz = 0.3230
+
+    ds = BerneseCrdDataSource(
+        filename=files["dk_bernese52.CRD"],
+        discard_flags=["W"],
+        sx=sx,
+        sy=sy,
+        sz=sz,
+    )
+
+    for c in ds.coordinates:
+        assert c.sx == sx
+        assert c.sy == sy
+        assert c.sz == sz
+
+    with pytest.raises(pydantic.ValidationError):
+        ds = BerneseCrdDataSource(
+            filename=files["dk_bernese52.CRD"],
+            discard_flags=["W"],
+            sx=-0.01,
+            sy=-1.0,
+            sz=-0.05,
+        )
+
+
+def test_crd_datasource_weight(files):
+    """Check that setting the global station weight works as expected."""
+    w = 0.92
+
+    ds = BerneseCrdDataSource(
+        filename=files["dk_bernese52.CRD"],
+        discard_flags=["W"],
+        w=w,
+    )
+
+    for c in ds.coordinates:
+        assert c.w == w
+
+    with pytest.raises(pydantic.ValidationError):
+        ds = BerneseCrdDataSource(
+            filename=files["dk_bernese52.CRD"],
+            discard_flags=["W"],
+            w=-1.0,
+        )
+
+
+def test_crd_datasource_epoch_override(files):
+    """Check that setting the global station weight works as expected."""
+    epoch = 2099.99
+
+    ds = BerneseCrdDataSource(
+        filename=files["dk_bernese54.CRD"],
+        discard_flags=["W"],
+        t=epoch,
+    )
+
+    for c in ds.coordinates:
+        assert c.t == epoch

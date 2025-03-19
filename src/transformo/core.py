@@ -17,6 +17,40 @@ from transformo._typing import CoordinateMatrix, Vector
 from transformo.datatypes import Coordinate, Parameter
 
 
+@pydantic.dataclasses.dataclass()
+class CoordinateOverrides:
+    """
+    Helper dataclass, that enables overriding coordinate values in a DataSource.
+
+    The fields in this class are the same as the fields of Coordinate, with the
+    exception that none of the fields are required and their default values are
+    set to None.
+
+    If the definitions are changed here, they need to be changed in Coordinate
+    as well.
+    """
+
+    # station name
+    station: str | None = pydantic.Field(None, pattern="[A-z0-9].*", strict=True)
+
+    # spatial coordinate elements
+    x: float | None = pydantic.Field(None, allow_inf_nan=False, strict=True)
+    y: float | None = pydantic.Field(None, allow_inf_nan=False, strict=True)
+    z: float | None = pydantic.Field(None, allow_inf_nan=False, strict=True)
+
+    sx: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sy: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sz: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate weight
+    w: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate epoch
+    t: float | None = pydantic.Field(
+        None, ge=0.0, le=10000.0, allow_inf_nan=False, strict=True
+    )
+
+
 class DataSource(pydantic.BaseModel):
     """Base class for any Transformo data source."""
 
@@ -33,13 +67,32 @@ class DataSource(pydantic.BaseModel):
     # when overriding settings etc.
     name: str | None = None
 
+    # standard deviations, uncertainties
+    sx: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sy: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+    sz: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate weight
+    w: float | None = pydantic.Field(None, ge=0.0, allow_inf_nan=False, strict=True)
+
+    # coordinate epoch
+    t: float | None = pydantic.Field(
+        None, ge=0.0, le=10000.0, allow_inf_nan=False, strict=True
+    )
+
+    # station-based overrides
+    overrides: dict[str, CoordinateOverrides] | None = pydantic.Field(
+        default_factory=dict
+    )
+
     # coordinates are not included in pipeline serialization
     coordinates: list[Coordinate] = pydantic.Field(default_factory=list, exclude=True)
 
     def __init__(
         self,
-        coordinates: list[Coordinate] | None = None,
         name: str | None = None,
+        coordinates: list[Coordinate] | None = None,
+        overrides: dict[str, CoordinateOverrides] | None = None,
         **kwargs,
     ) -> None:
         """Set up base reader."""
@@ -47,7 +100,119 @@ class DataSource(pydantic.BaseModel):
             # it's not kosher to initialize a value with [] as default
             coordinates = []
 
-        super().__init__(coordinates=coordinates, name=name, **kwargs)
+        if overrides is None:
+            overrides = {}
+
+        super().__init__(
+            name=name, coordinates=coordinates, overrides=overrides, **kwargs
+        )
+
+        # See the comment below regarding post initialization.
+        # Execute post initialization if, and only if, self is a DataSource.
+        #
+        # pylint: disable=unidiomatic-typecheck - for once this is what is needed
+        if type(self) is DataSource:
+            self.__post_init__()
+
+    # POST INITIALIZATION
+    #
+    # Implement a post init method, that is run once after the pydantic model
+    # has been serialized AND __init__() of subclasses of DataSource has been
+    # processed. This fascilitates the mechanism of overriding certain
+    # coordinate values across a DataSource.
+    #
+    # The overrides works by using __init_subclass__() to set a decorator on
+    # __init__(). That decorator is defined in __post_init__(). At first, this
+    # might seem like an over-complication that would be solved by using
+    # Pydantic's model_post_init() method the BaseModel. Unfortunately that is
+    # processed as a final step of BaseModel.__init__(), which poses a problem
+    # when a DataSource child is calling super().__init__() in order to
+    # serialize the model.
+    #
+    # Note that this ONLY works on subclasses of a DataSource. To run the post
+    # initialization on a DataSource that is not subclassed, a bit of extra
+    # trickery is needed. See the final lines of DataSource.__init__() above.
+
+    def __init_subclass__(cls, **kwargs):
+
+        def init_decorator(previous_init):
+            def new_init(self, *args, **kwargs):
+                previous_init(self, *args, **kwargs)
+                if isinstance(self, cls):
+                    self.__post_init__()
+
+            return new_init
+
+        cls.__init__ = init_decorator(cls.__init__)
+
+    def __post_init__(self) -> None:
+        """
+        Modify DataSource after the initial creation.
+
+        This allow overrides of the original data, for instance by setting
+        a different standard deviation of the coordinates in the DataSource.
+
+        Additionally, station-based overrides are handled here.
+
+        Do not override this method without calling super().__post_init__().
+        Or better yet, do not override it at all.
+        """
+        # pylint: disable=unsubscriptable-object
+
+        for c in self.coordinates:
+            if self.sx is not None:
+                c.sx = self.sx
+
+            if self.sy is not None:
+                c.sy = self.sy
+
+            if self.sz is not None:
+                c.sz = self.sz
+
+            if self.w is not None:
+                c.w = self.w
+
+            if self.t is not None:
+                c.t = self.t
+
+            if self.overrides is None:
+                continue
+
+            if c.station in self.overrides.keys():
+                # We store the original station name in key to avoid KeyError's
+                # when overriding the station name. If c.station is used as the
+                # key it will be overwritten in case a station is renamed in the
+                # overrides.
+                key = c.station
+
+                # The use of the walrus operator here might look a bit
+                # unnecessary, but it avoids a mypy incompatible type error
+                if (station := self.overrides[key].station) is not None:
+                    c.station = station
+
+                if (x := self.overrides[key].x) is not None:
+                    c.x = x
+
+                if (y := self.overrides[key].y) is not None:
+                    c.y = y
+
+                if (z := self.overrides[key].z) is not None:
+                    c.z = z
+
+                if (sx := self.overrides[key].sx) is not None:
+                    c.sx = sx
+
+                if (sy := self.overrides[key].sy) is not None:
+                    c.sy = sy
+
+                if (sz := self.overrides[key].sz) is not None:
+                    c.sz = sz
+
+                if (w := self.overrides[key].w) is not None:
+                    c.w = w
+
+                if (t := self.overrides[key].t) is not None:
+                    c.t = t
 
     def __add__(self, other: DataSource) -> DataSource:
         """

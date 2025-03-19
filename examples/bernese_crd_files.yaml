@@ -8,18 +8,25 @@ source_data:
   type: bernese_crd
   filename: test/data/dk_bernese52.crd
   discard_flags: [W] # Flags are given as a list. Flags are separated by commas.
+  sx: 0.05
+  sy: 0.05
+  sz: 0.1
 
 target_data:
 - name: Coordinates determined using Bernes 5.4
   type: bernese_crd
   filename: test/data/dk_bernese54.crd
   discard_flags: [W]
+  sx: 0.02
+  sy: 0.02
+  sz: 0.04
 
 operators:
 - name: null
-  type: dummy_operator
+  type: helmert_translation
 
 presenters:
 - type: coordinate_presenter
 - type: topocentricresidual_presenter
   coordinate_type: cartesian
+- type: proj_presenter

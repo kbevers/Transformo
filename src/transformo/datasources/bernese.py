@@ -93,11 +93,12 @@ class BerneseCrdDataSource(DataSource):
     Parse data from a Bernese CRD-file.
 
     CRD-files do not have any information about the uncertainties of the
-    coordinates. A file-wide uncertainty can be set using the field "stddev".
-    If "stddev" is not set the value 0.0 is used.
+    coordinates. By default they are set to 0.0. This can be overridden
+    by setting the fields `sx`, `sy` and `sz` respectively.
 
     Weights aren't specified in the file either and are set to 1.0 for all
-    coordinates in the file.
+    coordinates in the file. This can be overriden by setting the field
+    `w`.
 
     Each coordinate has a flag attached to it, most commonly seen are "A" or
     "W" that specifies if a station has been constrained (W) or not (A) in
@@ -106,12 +107,18 @@ class BerneseCrdDataSource(DataSource):
 
     type: Literal["bernese_crd"] = "bernese_crd"
     filename: os.PathLike | str
-    stddev: float = 0.0
-    weight: float = 1.0
     discard_flags: list[str] | None = None
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        sx: float = 0.0,
+        sy: float = 0.0,
+        sz: float = 0.0,
+        w: float = 1.0,
+        **kwargs,
+    ) -> None:
+        # sx, sy, sz and w are all defined in DataSource
+        super().__init__(sx=sx, sy=sy, sz=sz, w=w, **kwargs)
 
         # The overall structure of a CRD-file is:
         #
@@ -121,9 +128,9 @@ class BerneseCrdDataSource(DataSource):
         #
         # There is seemingly no fixed structure to these files. The header can differ
         # slightly from file to file. The coordinate table is made up of somewhere
-        # between 6 and 8 columns. The footer is not always present. In the code
-        # trys it's best to parse the available information without imposing a too
-        # strict understanding of the file's structure.
+        # between 6 and 8 columns. The footer is not always present. The code trys
+        # it's best to parse the available information without imposing a too strict
+        # understanding of the file's structure.
         with open(self.filename, "r", encoding="utf-8") as crdfile:
             lines = crdfile.readlines()
 
@@ -161,9 +168,9 @@ class BerneseCrdDataSource(DataSource):
                     x=crd_coord.x,
                     y=crd_coord.y,
                     z=crd_coord.z,
-                    sx=1.0,
-                    sy=1.0,
-                    sz=1.0,
-                    w=1.0,
+                    sx=sx,
+                    sy=sy,
+                    sz=sz,
+                    w=w,
                 )
             )
