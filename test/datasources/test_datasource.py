@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from transformo._typing import CoordinateMatrix
+from transformo.core import CoordinateOverrides
 from transformo.datasources import CombinedDataSource, CsvDataSource, DataSource
 
 
@@ -210,3 +211,30 @@ def test_post_init_datasource_wide_overrides_childs(files) -> None:
         assert c.sz == sz
         assert c.w == c.w
         assert c.t == c.t
+
+
+def test_station_overrides(files) -> None:
+    """Test that overriding values for certain station works."""
+    ds = CsvDataSource(
+        filename=files["dk_cors_etrs89.csv"],
+        overrides={
+            "BUDP": CoordinateOverrides(sx=0.01, w=2.0),
+            "FYHA": CoordinateOverrides(sy=0.5, t=2099.0),
+            "HIRS": CoordinateOverrides(x=0.0, y=0.0, z=0.0),
+            "SULD": CoordinateOverrides(station="MULD", sz=0.42),
+        },
+    )
+
+    for c in ds.coordinates:
+        if c.station == "BUDP":
+            assert c.sx == 0.01 and c.w == 2.0
+
+        if c.station == "FYHA":
+            assert c.sy == 0.5 and c.t == 2099.0
+
+        if c.station == "HIRS":
+            assert c.x == 0.0 and c.y == 0.0 and c.z == 0.0
+
+        if c.station == "SULD":
+            assert c.sz == 0.42
+            assert c.station == "MULD"

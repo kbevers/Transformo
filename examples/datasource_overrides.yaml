@@ -1,0 +1,60 @@
+# Demonstrate how to modify the data read from a data source.
+#
+# Data can be overridden in two ways:
+#
+#   1. for the entire datasource
+#   2. on a station basis
+#
+# The following fields can be changed for entirety of a data source:
+#
+#   t, sx, sy, sz, w
+#
+# This gives the opportunity to change weighting of coordinates across
+# the whole data source, as well as adjust the epoch in case it is not
+# registered correctly in the original source data.
+#
+# Similarly, coordinate data can be adjusted at a station level. Here
+# all aspects of a coordinate can be changed. The available fields are:
+#
+#   station, t, x, y, z, sx, sy, sz, w
+#
+# This is useful in case the source data has errors in it or if it would
+# be helpful to weigth a particular station differently that the rest.
+
+source_data:
+- name: ITRF2014
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+
+  # changes across the whole data source
+  sx: 0.02
+  sy: 0.02
+  sz: 0.04
+  w: 0.8
+  t: 2019.32
+
+  # changes to data from specific stations
+  overrides:
+    BUDP:
+      sz: 0.03
+      w: 1.0
+      t: 2099.0
+
+target_data:
+- name: ETRS89
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+
+  # changes to data from specific stations
+  overrides:
+    FYHA:
+      t: 3333.0
+    HIRS:
+      station: XXXX
+
+operators:
+- name: Helmert 3 Parameter Estimation
+  type: helmert_translation
+
+presenters:
+- type: coordinate_presenter
