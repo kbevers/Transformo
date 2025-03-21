@@ -4,8 +4,9 @@ Tests for transformo.operators.helmert
 
 import numpy as np
 
+from transformo.core import Transformer
 from transformo.datatypes import Parameter
-from transformo.operators import HelmertTranslation
+from transformo.operators import Helmert7Param, HelmertTranslation, RotationConvention
 
 
 def test_helmerttranslation_can_estimate():
@@ -110,3 +111,167 @@ def test_helmerttranslation_as_operator():
     assert op.parameters[0] == Parameter("x", 3)
     assert op.parameters[1] == Parameter("y", 5)
     assert op.parameters[2] == Parameter("z", 10)
+
+
+def test_helmert7param_instantiation():
+    """
+    Basic tests of instantiating the Helmert7Param class
+    """
+    h7 = Helmert7Param(
+        convention=RotationConvention.COORDINATE_FRAME,
+        x=1.0,
+        y=1.0,
+        z=1.0,
+        rx=0.001,
+        ry=0.002,
+        rz=0.003,
+        s=0.005,
+    )
+
+    assert isinstance(h7, Helmert7Param)
+    assert h7.x == 1.0
+    assert h7.y == 1.0
+    assert h7.z == 1.0
+    assert h7.rx == 0.001
+    assert h7.ry == 0.002
+    assert h7.rz == 0.003
+    assert h7.s == 0.005
+
+    assert h7._transformation_parameters_given is True
+    assert h7.can_estimate is False
+
+    h7 = Helmert7Param(convention=RotationConvention.COORDINATE_FRAME)
+
+    assert h7._transformation_parameters_given is False
+    assert h7.can_estimate is True
+
+
+def test_helmert7param_parameters():
+    """Test that Helmert7Param.parameters returns the correct values."""
+
+    h7 = Helmert7Param(
+        convention=RotationConvention.COORDINATE_FRAME,
+        test_helmert7param_small_angle_approximation=True,
+        x=1.0,
+        y=1.0,
+        z=1.0,
+        rx=0.001,
+        ry=0.002,
+        rz=0.003,
+        s=0.005,
+    )
+
+    for param in h7.parameters:
+        print(param.name, param.value)
+
+    assert h7.parameters[0].name == "x" and h7.parameters[0].value == 1.0
+    assert h7.parameters[1].name == "y" and h7.parameters[1].value == 1.0
+    assert h7.parameters[2].name == "z" and h7.parameters[2].value == 1.0
+    assert h7.parameters[3].name == "rx" and h7.parameters[3].value == 0.001
+    assert h7.parameters[4].name == "ry" and h7.parameters[4].value == 0.002
+    assert h7.parameters[5].name == "rz" and h7.parameters[5].value == 0.003
+    assert h7.parameters[6].name == "s" and h7.parameters[6].value == 0.005
+    assert (
+        h7.parameters[7].name == "convention"
+        and h7.parameters[7].value == "coordinate_frame"
+    )
+    assert h7.parameters[8].name == "approx"
+    assert len(h7.parameters) == 9
+
+    h7_2 = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        x=1.0,
+        rz=0.003,
+    )
+
+    print()
+    for param in h7_2.parameters:
+        print(param.name, param.value)
+
+    assert h7_2.parameters[0].name == "x" and h7_2.parameters[0].value == 1.0
+    assert h7_2.parameters[1].name == "rz" and h7_2.parameters[1].value == 0.003
+    assert (
+        h7_2.parameters[2].name == "convention"
+        and h7_2.parameters[2].value == "position_vector"
+    )
+
+
+def test_helmert7param_transformation(source_coordinates):
+    """Test the forward transformation of Helmert7Param."""
+
+    h7 = Helmert7Param(
+        convention=RotationConvention.COORDINATE_FRAME,
+        x=1234.0,
+        y=923.0,
+        z=523.0,
+        rx=0.001,
+        ry=0.002,
+        rz=0.003,
+        s=0.005,
+    )
+
+    projstring = "+proj=helmert "
+    for param in h7.parameters:
+        projstring += f"{param.as_proj_param} "
+
+    print(projstring)
+    T = Transformer.from_projstring(projstring)
+
+    transformo_coords = h7.forward(source_coordinates)
+    proj_coords = T.transform_many(source_coordinates)
+
+    # We are not going to get an exact match but it's very close and good enough
+    assert np.allclose(proj_coords, transformo_coords)
+
+    # Check the inverse transformation
+    roundtrip = h7.inverse(transformo_coords)
+    assert np.allclose(source_coordinates, roundtrip)
+
+
+def test_helmert7param_small_angle_approximation():
+    """
+    Test the rotation matrix with and without the small angles approximation.
+    """
+
+    rx = 23.1
+    ry = 22.252
+    rz = 39.42
+
+    # Check that the rotation matrices are different when produced with
+    # and without the small angle approximation. Of course we use sufficiently
+    # large rotations for this to be the case.
+    helmert_small_angle = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=True,
+        rx=rx,
+        ry=ry,
+        rz=rz,
+    )
+    helmert_full = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=False,
+        rx=rx,
+        ry=ry,
+        rz=rz,
+    )
+
+    assert not np.allclose(helmert_small_angle.R, helmert_full.R)
+
+    # Test specific values of rotation matrices, again with and
+    # without the small angles approximation.
+    arcsec2rad: float = lambda arcsec: np.deg2rad(arcsec) / 3600.0
+
+    x_rotation_small_angle = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=True,
+        rx=rx,
+    )
+
+    x_rotation = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=False,
+        rx=rx,
+    )
+
+    assert x_rotation_small_angle.R[2][1] == arcsec2rad(rx)
+    assert x_rotation.R[2][1] != arcsec2rad(rx)
