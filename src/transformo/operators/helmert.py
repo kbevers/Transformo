@@ -10,6 +10,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import numpy as np
+import scipy
+import scipy.optimize
 
 from transformo._typing import CoordinateMatrix, Vector
 from transformo.core import Operator
@@ -334,3 +336,72 @@ class Helmert7Param(HelmertTranslation):
         Inverse method of the 7 parameter Helmert.
         """
         return -self.T + 1 / self.scale * coordinates @ self.R
+
+    def estimate(
+        self,
+        source_coordinates: CoordinateMatrix,
+        target_coordinates: CoordinateMatrix,
+        source_weights: CoordinateMatrix,
+        target_weights: CoordinateMatrix,
+    ) -> None:
+        """
+        Estimate parameters.
+
+        NOTE: Parameters `x`, `y` and `z` ... of this operator *will* be
+        overwritten once this method is called.
+        """
+
+        convergence_threshold = 1e-6
+
+        # Initial guess
+        T0 = np.zeros(3)
+        R0 = np.eye(3)
+        s0 = 1.0
+
+        for _ in range(20):
+            transformed_coords = T0 + s0 * source_coordinates @ R0.T
+            residuals = target_coordinates - transformed_coords
+
+            print(residuals)
+
+            # Set up design matrix
+            A = np.zeros((source_coordinates.shape[0] * source_coordinates.shape[1], 7))
+            b = np.zeros(source_coordinates.shape[0] * source_coordinates.shape[1])
+
+            for i in range(source_coordinates.shape[0]):
+                A[3*i:3*i+3, 0:3] = np.eye(3)
+                A[3*i:3*i+3, 3] = -source_coordinates[i, 0]
+                A[3*i:3*i+3, 4] = -source_coordinates[i, 1]
+                A[3*i:3*i+3, 5] = -source_coordinates[i, 2]
+                A[3*i:3*i+3, 6] = 1
+
+                b[3*i:3*i+3] = residuals[i]
+
+            #W = np.diag(source_weights.flatten())
+            #Aw = np.dot(W, A)
+            #bw = np.dot(W, b)
+            Aw = A
+            bw = b
+
+            result = scipy.optimize.lsq_linear(Aw, bw)
+
+            T = result.x[0:3]
+            R = np.array([
+                [1 + result.x[3], result.x[4], result.x[5]],
+                [result.x[4], 1 + result.x[3], result.x[6]],
+                [result.x[5], result.x[6], 1 + result.x[3]]
+            ])
+            s = 1 + result.x[3]
+
+            if np.linalg.norm(T - T0) < convergence_threshold and \
+            np.linalg.norm(R - R0) < convergence_threshold and \
+            abs(s - s0) < convergence_threshold:
+                break
+
+            T0, R0, s0 = T, R, s
+
+            print()
+            print(T)
+            print(R)
+            print(s)
+            print()

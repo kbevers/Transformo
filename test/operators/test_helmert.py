@@ -6,6 +6,7 @@ import numpy as np
 
 from transformo.core import Transformer
 from transformo.datatypes import Parameter
+from transformo.datasources import CsvDataSource
 from transformo.operators import Helmert7Param, HelmertTranslation, RotationConvention
 
 
@@ -275,3 +276,21 @@ def test_helmert7param_small_angle_approximation():
 
     assert x_rotation_small_angle.R[2][1] == arcsec2rad(rx)
     assert x_rotation.R[2][1] != arcsec2rad(rx)
+
+def test_helmert7param_estimation(files):
+    """Test the `estimate()` method."""
+    src = CsvDataSource(files["dk_cors_itrf2014.csv"])
+    dst = CsvDataSource(files["dk_cors_etrs89.csv"])
+
+    H = Helmert7Param(
+        convention=RotationConvention.COORDINATE_FRAME,
+    )
+
+    H.estimate(
+        src.coordinate_matrix,
+        dst.coordinate_matrix,
+        src.weights_matrix,
+        dst.weights_matrix,
+    )
+
+    assert False
