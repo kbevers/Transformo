@@ -158,7 +158,11 @@ def test_residual_presenter(tmp_path, dummy_operator):
         ]
     )
 
-    presenter = ResidualPresenter(json_file=json_file, geojson_file=geojson_file)
+    presenter = ResidualPresenter(
+        coordinate_type=CoordinateType.DEGREES,
+        json_file=json_file,
+        geojson_file=geojson_file,
+    )
     presenter.evaluate(
         operators=[dummy_operator],
         source_data=model,

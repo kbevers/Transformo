@@ -11,9 +11,8 @@ from typing import Literal
 
 import numpy as np
 
-from transformo._typing import CoordinateMatrix
-from transformo.core import DataSource, Operator, Presenter, Transformer
-from transformo.datatypes import Coordinate
+from transformo.core import DataSource, Operator, Presenter
+from transformo.transformer import Transformer
 
 from . import construct_markdown_table
 
@@ -28,6 +27,16 @@ def _raise_exception_if_file_cant_be_created(filename: pathlib.Path):
     finally:
         if filename.exists():
             filename.unlink()
+
+
+class CoordinateType(Enum):
+    """
+    Defines coordinate archetypes.
+    """
+
+    CARTESIAN = "cartesian"
+    DEGREES = "degrees"
+    PROJECTED = "projected"
 
 
 class CoordinatePresenter(Presenter):
@@ -165,18 +174,26 @@ class ResidualPresenter(Presenter):
     """
 
     type: Literal["residual_presenter"] = "residual_presenter"
+
+    coordinate_type: CoordinateType
     json_file: pathlib.Path | None = None
     geojson_file: pathlib.Path | None = None
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, coordinate_type: CoordinateType, **kwargs) -> None:
         """."""
-        super().__init__(**kwargs)
+        super().__init__(coordinate_type=coordinate_type, **kwargs)
 
         if self.json_file:
             _raise_exception_if_file_cant_be_created(self.json_file)
         if self.geojson_file:
             _raise_exception_if_file_cant_be_created(self.geojson_file)
             self._geojson_features: list[dict] = []
+
+        # set up degrees -> cartesian converter
+        self._cart_transformer = Transformer.from_projstring("+proj=cart +ellps=GRS80")
+        self._cart_transformer_inv = Transformer.from_projstring(
+            "+proj=cart +ellps=GRS80 +inv"
+        )
 
         self._data: dict = {}
 
@@ -211,8 +228,14 @@ class ResidualPresenter(Presenter):
         ]
 
         if self.geojson_file:
+            transformer = None
+            if self.coordinate_type == CoordinateType.CARTESIAN:
+                transformer = self._cart_transformer_inv
+
             for coordinate in target_data.coordinates:
-                self._geojson_features.append(coordinate.geojson_feature())
+                self._geojson_features.append(
+                    coordinate.geojson_feature(transformer=transformer)
+                )
 
     def as_json(self) -> str:
         return json.dumps(self._data)
@@ -279,16 +302,6 @@ class ResidualPresenter(Presenter):
         return text
 
 
-class CoordinateType(Enum):
-    """
-    Defines coordinate archetypes.
-    """
-
-    CARTESIAN = "cartesian"
-    DEGREES = "degrees"
-    PROJECTED = "projected"
-
-
 class TopocentricResidualPresenter(Presenter):
     """
     Determine topocentric residuals between transformed and target coordinates.
@@ -304,8 +317,6 @@ class TopocentricResidualPresenter(Presenter):
 
     Projected coordinates are assumed to already be somewhat topocentric, and
     will not be manipulated before the residuals are calculated.
-
-    Degrees ...
     """
 
     type: Literal["topocentricresidual_presenter"] = "topocentricresidual_presenter"
@@ -328,6 +339,9 @@ class TopocentricResidualPresenter(Presenter):
 
         # set up degrees -> cartesian converter
         self._cart_transformer = Transformer.from_projstring("+proj=cart +ellps=GRS80")
+        self._cart_transformer_inv = Transformer.from_projstring(
+            "+proj=cart +ellps=GRS80 +inv"
+        )
 
     def evaluate(
         self,
@@ -388,8 +402,14 @@ class TopocentricResidualPresenter(Presenter):
         )
 
         if self.geojson_file:
+            transformer = None
+            if self.coordinate_type == CoordinateType.CARTESIAN:
+                transformer = self._cart_transformer_inv
+
             for coordinate in target_data.coordinates:
-                self._geojson_features.append(coordinate.geojson_feature())
+                self._geojson_features.append(
+                    coordinate.geojson_feature(transformer=transformer)
+                )
 
     def as_json(self) -> str:
         return json.dumps(self._data)
@@ -423,7 +443,7 @@ class TopocentricResidualPresenter(Presenter):
             "type": "FeatureCollection",
             "features": self._geojson_features,
         }
-        print(geojson)
+
         with open(self.geojson_file, "w", encoding="utf-8") as f:
             json.dump(geojson, f)
 
