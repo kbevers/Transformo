@@ -9,6 +9,7 @@ import pydantic
 from pydantic.dataclasses import dataclass
 
 from transformo._typing import ParameterValue
+from transformo.transformer import Transformer
 
 
 @dataclass()
@@ -95,13 +96,20 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
 
         return np.multiply(weights, self.w)
 
-    def geojson_feature(self, properties: dict | None = None) -> dict:
+    def geojson_feature(
+        self, properties: dict | None = None, transformer: Transformer | None = None
+    ) -> dict:
         """
         Return a basic GeoJSON feature.
 
         The feature is composed of the station coordinates and name. Additional
         properties can be added by supplying them in the `properties` dict.
         """
+
+        lon, lat, h = self.x, self.y, self.z
+        if transformer:
+            lon, lat, h = transformer.transform_one(np.array([lon, lat, h]))
+
         feat: dict = {
             "type": "Feature",
             "properties": {
@@ -110,8 +118,8 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    self.x,
-                    self.y,
+                    lon,
+                    lat,
                 ],
             },
         }
