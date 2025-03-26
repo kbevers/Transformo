@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from transformo.core import Transformer
+from transformo.transformer import Transformer
 
 
 def test_initialization() -> None:

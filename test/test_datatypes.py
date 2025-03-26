@@ -7,6 +7,7 @@ import pydantic
 import pytest
 
 from transformo.datatypes import Coordinate, Parameter
+from transformo.transformer import Transformer
 
 
 def test_coordinate_field_limits():
@@ -164,6 +165,17 @@ def test_coordinate_geojson_feature(coordinate: Coordinate):
 
     # verify that origin properties are overriden by those in `properties`
     assert feature_with_properties["properties"]["station"] == "STATION"
+
+    # test that the transformer works on the output coordinates
+    transformer = Transformer.from_projstring("+proj=helmert +x=1.0 +y=2.0")
+    feature_transformed_coords = coordinate.geojson_feature(transformer=transformer)
+
+    assert (
+        feature_transformed_coords["geometry"]["coordinates"][0] == coordinate.x + 1.0
+    )
+    assert (
+        feature_transformed_coords["geometry"]["coordinates"][1] == coordinate.y + 2.0
+    )
 
 
 def test_parameter():

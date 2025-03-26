@@ -11,9 +11,8 @@ from typing import Literal
 
 import numpy as np
 
-from transformo._typing import CoordinateMatrix
-from transformo.core import DataSource, Operator, Presenter, Transformer
-from transformo.datatypes import Coordinate
+from transformo.core import DataSource, Operator, Presenter
+from transformo.transformer import Transformer
 
 from . import construct_markdown_table
 
@@ -328,6 +327,9 @@ class TopocentricResidualPresenter(Presenter):
 
         # set up degrees -> cartesian converter
         self._cart_transformer = Transformer.from_projstring("+proj=cart +ellps=GRS80")
+        self._cart_transformer_inv = Transformer.from_projstring(
+            "+proj=cart +ellps=GRS80 +inv"
+        )
 
     def evaluate(
         self,
@@ -389,7 +391,9 @@ class TopocentricResidualPresenter(Presenter):
 
         if self.geojson_file:
             for coordinate in target_data.coordinates:
-                self._geojson_features.append(coordinate.geojson_feature())
+                self._geojson_features.append(
+                    coordinate.geojson_feature(transformer=self._cart_transformer_inv)
+                )
 
     def as_json(self) -> str:
         return json.dumps(self._data)
@@ -423,7 +427,7 @@ class TopocentricResidualPresenter(Presenter):
             "type": "FeatureCollection",
             "features": self._geojson_features,
         }
-        print(geojson)
+
         with open(self.geojson_file, "w", encoding="utf-8") as f:
             json.dump(geojson, f)
 
