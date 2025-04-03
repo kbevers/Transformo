@@ -39,6 +39,8 @@ source_data:
       sz: 0.03
       w: 1.0
       t: 2099.0
+    HIRS:
+      station: XXXX
 
 target_data:
 - name: ETRS89
@@ -57,4 +59,4 @@ operators:
   type: helmert_translation
 
 presenters:
-- type: coordinate_presenter
+- type: datasource_presenter

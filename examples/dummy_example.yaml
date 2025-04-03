@@ -1,0 +1,21 @@
+# The absolute minimum example of Transformo.
+#
+# It does nothing.
+
+source_data:
+- name: ITRF2014
+  type: csv
+  filename: test/data/dk_cors_itrf2014.csv
+
+target_data:
+- name: ETRS89
+  type: csv
+  filename: test/data/dk_cors_etrs89.csv
+
+operators:
+- name: A Dumb Operator
+  type: dummy_operator
+
+presenters:
+- name: A Dumb Presenter
+  type: dummy_presenter
