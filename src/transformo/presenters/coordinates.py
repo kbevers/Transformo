@@ -213,6 +213,10 @@ class ResidualPresenter(Presenter):
         model = results[-1].coordinate_matrix
 
         residuals = np.subtract(target, model)
+
+        # convert to milimeters
+        residuals *= 1000
+
         residual_norms = [np.linalg.norm(r) for r in residuals]
 
         self._data["residuals"] = {}

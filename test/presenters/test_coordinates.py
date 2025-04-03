@@ -172,8 +172,8 @@ def test_residual_presenter(tmp_path, dummy_operator):
 
     data = json.loads(presenter.as_json())
 
-    assert data["residuals"]["A"][0] == 2.5
-    assert data["residuals"]["B"][3] == 1.0
+    assert data["residuals"]["A"][0] == 2500.0
+    assert data["residuals"]["B"][3] == 1000.0
 
     print(data)
     print(presenter.as_markdown())
