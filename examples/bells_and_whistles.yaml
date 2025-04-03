@@ -23,6 +23,8 @@ presenters:
   name: PROJ String
 - type: residual_presenter
   name: Coordinate differences
+  coordinate_type: cartesian
+  geojson_file: residuals.geojson
 - type: topocentricresidual_presenter
   name: ENU Residuals
   coordinate_type: cartesian

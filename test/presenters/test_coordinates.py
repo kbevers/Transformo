@@ -158,7 +158,11 @@ def test_residual_presenter(tmp_path, dummy_operator):
         ]
     )
 
-    presenter = ResidualPresenter(json_file=json_file, geojson_file=geojson_file)
+    presenter = ResidualPresenter(
+        coordinate_type=CoordinateType.DEGREES,
+        json_file=json_file,
+        geojson_file=geojson_file,
+    )
     presenter.evaluate(
         operators=[dummy_operator],
         source_data=model,
@@ -168,8 +172,8 @@ def test_residual_presenter(tmp_path, dummy_operator):
 
     data = json.loads(presenter.as_json())
 
-    assert data["residuals"]["A"][0] == 2.5
-    assert data["residuals"]["B"][3] == 1.0
+    assert data["residuals"]["A"][0] == 2500.0
+    assert data["residuals"]["B"][3] == 1000.0
 
     print(data)
     print(presenter.as_markdown())
