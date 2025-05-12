@@ -12,7 +12,9 @@ target_data:
 
 operators:
 - name: null
-  type: dummy_operator
+  type: helmert_7param
+  convention: coordinate_frame
+  small_angle_approximation: true
 
 presenters:
 - type: datasource_presenter

@@ -3,10 +3,11 @@ Tests for transformo.operators.helmert
 """
 
 import numpy as np
+import pytest
 
-from transformo.core import Transformer
 from transformo.datatypes import Parameter
 from transformo.operators import Helmert7Param, HelmertTranslation, RotationConvention
+from transformo.transformer import Transformer
 
 
 def test_helmerttranslation_can_estimate():
@@ -275,3 +276,31 @@ def test_helmert7param_small_angle_approximation():
 
     assert x_rotation_small_angle.R[2][1] == arcsec2rad(rx)
     assert x_rotation.R[2][1] != arcsec2rad(rx)
+
+
+def test_helmert7parameter_estimation(source_coordinates, target_coordinates):
+    """
+    Verify that estimation of a 7 parameter Helmert works.
+
+    The test is slightly dumb as it simply checks that transformation of the
+    source coordinates somewhat matches the target coordinates.
+    """
+    h = Helmert7Param(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=True,
+    )
+
+    weights = np.ones_like(source_coordinates)
+    h.estimate(source_coordinates, target_coordinates, weights, weights)
+
+    estimated_coordinates = h.forward(source_coordinates)
+
+    assert estimated_coordinates[0, 0] == pytest.approx(target_coordinates[0, 0])
+    assert estimated_coordinates[0, 1] == pytest.approx(target_coordinates[0, 1])
+    assert estimated_coordinates[0, 2] == pytest.approx(target_coordinates[0, 2])
+    assert estimated_coordinates[1, 0] == pytest.approx(target_coordinates[1, 0])
+    assert estimated_coordinates[1, 1] == pytest.approx(target_coordinates[1, 1])
+    assert estimated_coordinates[1, 2] == pytest.approx(target_coordinates[1, 2])
+    assert estimated_coordinates[-1, 0] == pytest.approx(target_coordinates[-1, 0])
+    assert estimated_coordinates[-1, 1] == pytest.approx(target_coordinates[-1, 1])
+    assert estimated_coordinates[-1, 2] == pytest.approx(target_coordinates[-1, 2])
