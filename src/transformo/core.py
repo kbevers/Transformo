@@ -461,10 +461,10 @@ class Operator(pydantic.BaseModel):
         # given as input. If `estimate()` is implemented *some* parameters
         # will be estimated and stored in the `Operator` but they will be
         # discarded when `estimate()` is executed again with proper input.
-        zeros = np.zeros(shape=(4, 3))
         ones = np.ones(shape=(4, 3))
+        twos = ones * 2
         try:
-            self.estimate(zeros, zeros, ones, ones)
+            self.estimate(ones, ones, twos, twos)
         except NotImplementedError:
             return False
 

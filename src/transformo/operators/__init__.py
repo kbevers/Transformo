@@ -10,13 +10,15 @@ from transformo._typing import CoordinateMatrix
 from transformo.core import Operator
 from transformo.datatypes import Parameter
 
-from .helmert import HelmertTranslation
+from .helmert import Helmert7Param, HelmertTranslation, RotationConvention
 from .proj import ProjOperator
 
 __all__ = [
     "Operator",
     "DummyOperator",
     "HelmertTranslation",
+    "Helmert7Param",
+    "RotationConvention",
     "ProjOperator",
 ]
 
