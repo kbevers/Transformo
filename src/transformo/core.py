@@ -81,7 +81,7 @@ class DataSource(pydantic.BaseModel):
 
     # station-based overrides
     overrides: dict[str, CoordinateOverrides] | None = pydantic.Field(
-        default_factory=dict
+        default_factory=dict.__call__
     )
 
     # coordinates are not included in pipeline serialization

@@ -102,7 +102,7 @@ def test_helmerttranslation_as_operator():
     op = HelmertTranslation(x=3, y=5, z=10)
 
     # Can we roundtrip the `forward` and `inverse` methods
-    source_coordinates = np.zeros(shape=(10, 3))
+    source_coordinates = np.zeros(shape=(10, 4))
     roundtripped_coordinates = op.inverse(op.forward(source_coordinates))
     print(roundtripped_coordinates)
     assert np.all(source_coordinates == roundtripped_coordinates)
@@ -218,8 +218,12 @@ def test_helmert7param_transformation(source_coordinates):
     print(projstring)
     T = Transformer.from_projstring(projstring)
 
+    print(source_coordinates[0, :])
     transformo_coords = h7.forward(source_coordinates)
     proj_coords = T.transform_many(source_coordinates)
+    print(source_coordinates[0, :])
+    print(transformo_coords[0, :])
+    print(proj_coords[0, :])
 
     # We are not going to get an exact match but it's very close and good enough
     assert np.allclose(proj_coords, transformo_coords)

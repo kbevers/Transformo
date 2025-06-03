@@ -8,7 +8,7 @@ import numpy as np
 import pydantic
 from pydantic.dataclasses import dataclass
 
-from transformo._typing import ParameterValue
+from transformo._typing import CoordinateVector, ParameterValue
 from transformo.transformer import Transformer
 
 
@@ -64,9 +64,9 @@ class Coordinate:  # pylint: disable=too-many-instance-attributes
         )
 
     @property
-    def vector(self) -> np.typing.ArrayLike:
+    def vector(self) -> CoordinateVector:
         """Coordinate given as Numpy vector (1D array)."""
-        return np.array([self.x, self.y, self.z])
+        return np.array([self.x, self.y, self.z, self.t])
 
     @property
     def stddev(self) -> np.typing.ArrayLike:

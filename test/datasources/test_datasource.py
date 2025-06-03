@@ -23,7 +23,7 @@ def test_datasource(coordinate_factory: Callable) -> None:
 
     # Is the coordinate matrix property functioning as expected?
     assert isinstance(ds1.coordinate_matrix, np.ndarray)
-    assert ds1.coordinate_matrix.shape == (n, 3)
+    assert ds1.coordinate_matrix.shape == (n, 4)
     assert (ds1.coordinate_matrix[0, :] == ds1.coordinates[0].vector).all()
 
     # Can we add two datasources?
@@ -31,7 +31,7 @@ def test_datasource(coordinate_factory: Callable) -> None:
 
     ds_combined = ds1 + ds2
     assert len(ds_combined.coordinates) == 2 * n
-    assert ds_combined.coordinate_matrix.shape == (2 * n, 3)
+    assert ds_combined.coordinate_matrix.shape == (2 * n, 4)
     assert isinstance(ds_combined, DataSource)
 
     ds_combined2 = ds1
@@ -39,7 +39,7 @@ def test_datasource(coordinate_factory: Callable) -> None:
         ds_combined2 = ds_combined2 + ds
 
     assert len(ds_combined2.coordinates) == 3 * n
-    assert ds_combined2.coordinate_matrix.shape == (3 * n, 3)
+    assert ds_combined2.coordinate_matrix.shape == (3 * n, 4)
     assert isinstance(ds_combined2, DataSource)
 
 

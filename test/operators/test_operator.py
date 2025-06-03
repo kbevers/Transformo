@@ -9,7 +9,7 @@ import pytest
 
 from transformo._typing import CoordinateMatrix
 from transformo.datatypes import Parameter
-from transformo.operators import DummyOperator, Operator
+from transformo.operators import DummyOperator, Operator, ProjOperator
 
 
 def test_base_operator(source_coordinates):
@@ -83,3 +83,20 @@ def test_dummyoperator(source_coordinates, target_coordinates):
 
     # The `DummyOperator`` should be able to run the `estimate()` method
     assert operator.can_estimate is True
+
+
+def test_4d_transformation(source_coordinates):
+    """
+    Test that spatiotemporal transformation works.
+    """
+    # apply an offset in the x-direction (ten meters pr year since 2000)
+    op = ProjOperator(proj_string="+proj=helmert +dx=10 +t_epoch=2000.0")
+    transformed = op.forward(source_coordinates)
+
+    print(source_coordinates)
+    print(transformed)
+
+    # manually remove the applied x-offset
+    dt = source_coordinates[:, 3] - 2000
+    x_offset_removed = transformed[:, 0] - dt * 10
+    assert np.all(x_offset_removed == source_coordinates[:, 0])
