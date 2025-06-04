@@ -212,7 +212,7 @@ class ResidualPresenter(Presenter):
         target = target_data.coordinate_matrix
         model = results[-1].coordinate_matrix
 
-        residuals = np.subtract(target, model)
+        residuals = np.subtract(target[:, 0:3], model[:, 0:3])
 
         # convert to milimeters
         residuals *= 1000

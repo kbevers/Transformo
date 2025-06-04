@@ -50,22 +50,24 @@ class ProjOperator(Operator):
         """
         Forward method of the Transformation.
         """
-        x, y, z = self._transformer.transform(
+        x, y, z, t = self._transformer.transform(
             coordinates[:, 0],
             coordinates[:, 1],
             coordinates[:, 2],
+            coordinates[:, 3],
             direction=pyproj.enums.TransformDirection.FORWARD,
         )
-        return np.array([x, y, z]).transpose()
+        return np.array([x, y, z, t]).transpose()
 
     def inverse(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
         """
         Inverse method of the Transformation.
         """
-        x, y, z = self._transformer.transform(
+        x, y, z, t = self._transformer.transform(
             coordinates[:, 0],
             coordinates[:, 1],
             coordinates[:, 2],
+            coordinates[:, 3],
             direction=pyproj.enums.TransformDirection.INVERSE,
         )
-        return np.array([x, y, z]).transpose()
+        return np.array([x, y, z, t]).transpose()

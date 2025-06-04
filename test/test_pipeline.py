@@ -29,8 +29,8 @@ def test_pipeline(datasource_factory: Callable) -> None:
 
     # Test that source/target_coordinates properties are working as intended
     n_coordinates = 2 * 10  # 2 datasources with 10 coordinates each
-    assert pipeline.source_coordinates.shape == (n_coordinates, 3)
-    assert pipeline.target_coordinates.shape == (n_coordinates, 3)
+    assert pipeline.source_coordinates.shape == (n_coordinates, 4)
+    assert pipeline.target_coordinates.shape == (n_coordinates, 4)
 
     assert (
         pipeline.source_coordinates[0, 0]
