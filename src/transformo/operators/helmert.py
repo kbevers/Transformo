@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 import numpy as np
 from numpy import cos, sin
 
-from transformo._typing import CoordinateMatrix, Vector
+from transformo._typing import CoordinateMatrix, Matrix, Vector
 from transformo.core import Operator
 from transformo.datatypes import Parameter
 
@@ -130,13 +130,17 @@ class HelmertTranslation(Operator):
         """
         Forward method of the 3 parameter Helmert.
         """
-        return coordinates + self.T
+        coords = coordinates.copy()
+        coords[:, 0:3] = coords[:, 0:3] + self.T
+        return coords
 
     def inverse(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
         """
         Inverse method of the 3 parameter Helmert.
         """
-        return coordinates - self.T
+        coords = coordinates.copy()
+        coords[:, 0:3] = coords[:, 0:3] - self.T
+        return coords
 
     def estimate(
         self,
@@ -152,8 +156,12 @@ class HelmertTranslation(Operator):
         this method is called.
         """
 
-        avg_source = np.average(source_coordinates, axis=0, weights=source_weights)
-        avg_target = np.average(target_coordinates, axis=0, weights=target_weights)
+        avg_source = np.average(
+            source_coordinates[:, 0:3], axis=0, weights=source_weights
+        )
+        avg_target = np.average(
+            target_coordinates[:, 0:3], axis=0, weights=target_weights
+        )
 
         mean_translation = avg_target - avg_source
 
@@ -172,7 +180,7 @@ class RotationConvention(enum.Enum):
 
 
 # fmt: off
-def R1(rx: float) -> CoordinateMatrix:
+def R1(rx: float) -> Matrix:
     """Rotation matrix for rotating about the x-axis."""
     return np.array(
         [
@@ -182,7 +190,7 @@ def R1(rx: float) -> CoordinateMatrix:
         ]
     )
 
-def R2(ry: float) -> CoordinateMatrix:
+def R2(ry: float) -> Matrix:
     """Rotation matrix for rotating about the y-axis."""
     return np.array(
         [
@@ -192,7 +200,7 @@ def R2(ry: float) -> CoordinateMatrix:
         ]
     )
 
-def R3(rz: float) -> CoordinateMatrix:
+def R3(rz: float) -> Matrix:
     """Rotation matrix for rotating about the z-axis."""
     return np.array(
         [
@@ -296,7 +304,7 @@ class Helmert7Param(HelmertTranslation):
         return params
 
     @cached_property
-    def R(self) -> CoordinateMatrix:  # pylint: disable=invalid-name
+    def R(self) -> Matrix:  # pylint: disable=invalid-name
         """
         Rotation matrix.
         """
@@ -342,13 +350,18 @@ class Helmert7Param(HelmertTranslation):
         # from the single-point Helmert formulation of B = T + s * R*A.
         # By transposing the rotation matrix we get the same results
         # when instead doing B = T + s * A*R^T.
-        return self.T + self.scale * coordinates @ self.R.T
+        coords = coordinates.copy()
+        coords[:, 0:3] = self.T + self.scale * coords[:, 0:3] @ self.R.T
+        return coords
 
     def inverse(self, coordinates: CoordinateMatrix) -> CoordinateMatrix:
         """
         Inverse method of the 7 parameter Helmert.
         """
-        return -self.T + 1 / self.scale * coordinates @ self.R
+        coords = coordinates.copy()
+        coords[:, 0:3] = -self.T + 1 / self.scale * coords[:, 0:3] @ self.R
+
+        return coords
 
     def estimate(
         self,
@@ -382,7 +395,7 @@ class Helmert7Param(HelmertTranslation):
 
             A[i * 3 : i * 3 + 3, :] = np.column_stack([np.eye(3), c[0:3], R])
 
-        b = target_coordinates.flatten()
+        b = target_coordinates[:, 0:3].flatten()
 
         coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
 

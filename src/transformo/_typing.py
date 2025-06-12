@@ -12,8 +12,10 @@ from typing import Annotated, Any, Literal, Protocol, runtime_checkable
 import numpy as np
 import numpy.typing as npt
 
-Vector = Annotated[npt.NDArray[np.floating], Literal[3, 1]]
-CoordinateMatrix = Annotated[npt.NDArray[np.floating], Literal["N", 3]]
+Vector = Annotated[npt.NDArray[np.floating], Literal["N", 1]]
+Matrix = Annotated[npt.NDArray[np.floating], Literal["M", "N"]]
+CoordinateVector = Annotated[npt.NDArray[np.floating], Literal[4, 1]]
+CoordinateMatrix = Annotated[npt.NDArray[np.floating], Literal["N", 4]]
 
 ParameterValue = str | float | None
 
@@ -46,7 +48,7 @@ class CoordinateLike(Protocol):
     ) -> CoordinateLike: ...
 
     @property
-    def vector(self) -> np.typing.ArrayLike: ...
+    def vector(self) -> CoordinateVector: ...
 
     @property
     def stddev(self) -> np.typing.ArrayLike: ...

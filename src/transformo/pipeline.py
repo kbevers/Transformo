@@ -81,6 +81,29 @@ class Pipeline(pydantic.BaseModel):
         self._combined_source_data = sum(self.source_data, DataSource(None))
         self._combined_target_data = sum(self.target_data, DataSource(None))
 
+        all_source_stations = self._combined_source_data.stations
+        all_target_stations = self._combined_target_data.stations
+
+        station_union = self._combined_source_data.station_union(
+            self._combined_target_data
+        )
+
+        self._combined_source_data.limit_to_stations(station_union)
+        self._combined_target_data.limit_to_stations(station_union)
+
+        limited_source_stations = self._combined_source_data.stations
+        limited_target_stations = self._combined_target_data.stations
+
+        if len(limited_source_stations) != len(all_source_stations):
+            n = len(all_source_stations) - len(limited_source_stations)
+            msg = f"{n} stations removed from source data (not in intersection of source and target data)"
+            logger.warning(msg)
+
+        if len(limited_target_stations) != len(all_target_stations):
+            n = len(all_target_stations) - len(limited_target_stations)
+            msg = f"{n} stations removed from target data (not in intersection of source and target data)"
+            logger.warning(msg)
+
         self._intermediate_results: list[DataSource] = []
 
     @classmethod

@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 import pyproj
 
-from transformo._typing import CoordinateMatrix, Vector
+from transformo._typing import CoordinateMatrix, CoordinateVector
 
 
 class Transformer:
@@ -15,7 +15,7 @@ class Transformer:
     Transform coordinates using PROJ.
 
     Interface for pyproj that works using Transformo's datatypes such
-    as CoordinateMatrix and Vector.
+    as CoordinateMatrix and CoordinateVector.
     """
 
     def __init__(self, transformer: pyproj.Transformer | None = None):
@@ -50,7 +50,7 @@ class Transformer:
         results = self.transformer.itransform(coordinates)
         return np.array(list(results))
 
-    def transform_one(self, coordinate: Vector) -> Vector:
+    def transform_one(self, coordinate: CoordinateVector) -> CoordinateVector:
         """
         Transform a single coordinate.
         """
