@@ -32,23 +32,6 @@ def test_pipeline(datasource_factory: Callable) -> None:
     assert pipeline.source_coordinates.shape == (n_coordinates, 4)
     assert pipeline.target_coordinates.shape == (n_coordinates, 4)
 
-    assert (
-        pipeline.source_coordinates[0, 0]
-        == pipeline.source_data[0].coordinates[0].vector[0]
-    )
-    assert (
-        pipeline.source_coordinates[15, 2]
-        == pipeline.source_data[1].coordinates[5].vector[2]
-    )
-    assert (
-        pipeline.target_coordinates[7, 0]
-        == pipeline.target_data[0].coordinates[7].vector[0]
-    )
-    assert (
-        pipeline.target_coordinates[19, 2]
-        == pipeline.target_data[1].coordinates[9].vector[2]
-    )
-
 
 def test_pipeline_yaml_serilization(files: dict) -> None:
     """

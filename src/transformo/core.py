@@ -213,6 +213,8 @@ class DataSource(pydantic.BaseModel):
                 if (t := self.overrides[key].t) is not None:
                     c.t = t
 
+            self.coordinates = sorted(self.coordinates, key=lambda c: c.station)
+
     def __add__(self, other: DataSource) -> DataSource:
         """
         Add two `DataSource`s.
@@ -330,6 +332,22 @@ class DataSource(pydantic.BaseModel):
             new_coordinates.append(coord)
 
         return DataSource(coordinates=new_coordinates)
+
+    def station_union(self, other: DataSource) -> list[str]:
+        return list(set(self.stations) & set(other.stations))
+
+    def limit_to_stations(self, stations: list[str]) -> None:
+        """
+        Limit DataSource to stations given in supplied list.
+        """
+        stations_to_remove = []
+
+        for c in self.coordinates:
+            if c.station not in stations:
+                stations_to_remove.append(c)
+
+        for c in stations_to_remove:
+            self.coordinates.remove(c)
 
 
 class CombinedDataSource(DataSource):

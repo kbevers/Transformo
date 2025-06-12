@@ -238,3 +238,45 @@ def test_station_overrides(files) -> None:
         if c.station == "SULD":
             assert c.sz == 0.42
             assert c.station == "MULD"
+
+
+def test_station_union(files) -> None:
+    """
+    Test DataSource.station_union().
+
+    In the file `dk_cors_etrs89.csv` we have the following stations:
+
+        BUDP, ESBC, FER5, FYHA, GESR, HABY, HIRS, SMID, SULD, TEJH
+
+    By renaming some of them in the import we can simulate to different
+    DataSources that includes different stations.
+    """
+
+    ds1 = CsvDataSource(filename=files["dk_cors_etrs89.csv"])
+    ds2 = CsvDataSource(
+        filename=files["dk_cors_etrs89.csv"],
+        overrides={
+            "BUDP": CoordinateOverrides(station="BIDP"),
+            "FYHA": CoordinateOverrides(station="PYHA"),
+            "HIRS": CoordinateOverrides(station="HALS"),
+            "SULD": CoordinateOverrides(station="MULD"),
+        },
+    )
+
+    union = ds1.station_union(ds2)
+    expected_union = ["ESBC", "FER5", "GESR", "HABY", "SMID", "TEJH"]
+
+    assert set(union) == set(expected_union)
+
+
+def test_limit_to_stations(files) -> None:
+    """Test DataSource.limit_to_stations()."""
+    ds = CsvDataSource(
+        filename=files["dk_cors_etrs89.csv"],
+    )
+
+    stations = ["BUDP", "ESBC"]
+    ds.limit_to_stations(stations)
+    limited_stations = [c.station for c in ds.coordinates]
+
+    assert stations == limited_stations
