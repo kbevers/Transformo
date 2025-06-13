@@ -7,7 +7,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Logging
 console_handler = logging.StreamHandler()
