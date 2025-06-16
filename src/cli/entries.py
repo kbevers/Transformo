@@ -59,24 +59,21 @@ def set_logging_level(verbosity: int) -> None:
 @click.option(
     "--markdown",
     is_flag=True,
-    default=False,
     help="Output report with results in Markdown-format.",
 )
 @click.option(
     "--html",
     is_flag=True,
-    default=False,
     help="Output report with results in HTML-format.",
 )
 @click.option(
     "--pdf",
     is_flag=True,
-    default=False,
     help="Output report with results in PDF-format.",
 )
 @click.option(
     "--out-dir",
-    default="transformo_results",
+    default=".",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     help=(
         "Directory where generated files are placed. Defaults to `transformo_results` "
@@ -89,7 +86,7 @@ def main(  # pylint: disable=too-many-arguments
     report_in_terminal: bool,
     markdown: bool,
     html: bool,
-    pdf: bool,
+    pdf: str,
     out_dir: Path,
 ) -> None:
     """
@@ -169,7 +166,9 @@ def main(  # pylint: disable=too-many-arguments
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if markdown:
-        with open(out_dir / "transformo.md", "w", encoding="utf-8") as md_file:
+        with open(
+            out_dir / Path(configuration_file.stem + ".md"), "w", encoding="utf-8"
+        ) as md_file:
             md_file.writelines(markdown_results)
 
     if html:
@@ -179,7 +178,7 @@ def main(  # pylint: disable=too-many-arguments
             pandoc.write(
                 pandoc.read(markdown_results),
                 format="html",
-                file=out_dir / "transformo.html",
+                file=out_dir / Path(configuration_file.stem + ".html"),
                 options=["--standalone", "--embed-resources", "--css", css_file],
             )
         except PermissionError:
@@ -193,7 +192,7 @@ def main(  # pylint: disable=too-many-arguments
             pandoc.write(
                 pandoc.read(markdown_results),
                 format="pdf",
-                file=out_dir / "transformo.pdf",
+                file=out_dir / Path(configuration_file.stem + ".pdf"),
             )
         except PermissionError:
             logger.error(
