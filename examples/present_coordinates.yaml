@@ -19,3 +19,7 @@ operators:
 
 presenters:
 - type: coordinate_presenter
+
+- type: topocentricresidual_presenter
+  name: ENU Residuals
+  coordinate_type: cartesian

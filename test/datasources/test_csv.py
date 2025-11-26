@@ -94,5 +94,5 @@ def test_csv_too_few_columns_specified(files: dict[str, Path]) -> None:
         CsvDataSource(
             filename=files["dk_cors_etrs89.csv"],
             # note, weights are not read here
-            columns=["station", "t", "x", "y", "z"],
+            columns=["station", "x", "y"],
         )

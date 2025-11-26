@@ -31,30 +31,43 @@ class CsvColumns(enum.Enum):
 
 REQUIRED_COLUMNS = (
     CsvColumns.STATION,
-    CsvColumns.T,
     CsvColumns.X,
     CsvColumns.Y,
     CsvColumns.Z,
-    CsvColumns.SX,
-    CsvColumns.SY,
-    CsvColumns.SZ,
 )
 
 
 def _dict_to_coordinate(d: dict[str, str]) -> Coordinate:
+    t = 0.0
+    sx = 0.0
+    sy = 0.0
+    sz = 0.0
     weight = 1.0
+
+    if "sx" in d.keys() and d["sx"]:
+        t = float(d["sx"])
+
+    if "sy" in d.keys() and d["sy"]:
+        t = float(d["sy"])
+
+    if "sz" in d.keys() and d["sz"]:
+        t = float(d["sz"])
+
+    if "t" in d.keys() and d["t"]:
+        t = float(d["t"])
+
     if "weight" in d.keys() and d["weight"]:
         weight = float(d["weight"])
 
     return Coordinate(
         station=d["station"],
-        t=float(d["t"]),
+        t=t,
         x=float(d["x"]),
         y=float(d["y"]),
         z=float(d["z"]),
-        sx=float(d["sx"]),
-        sy=float(d["sy"]),
-        sz=float(d["sz"]),
+        sx=sx,
+        sy=sy,
+        sz=sz,
         w=weight,
     )
 
@@ -104,12 +117,21 @@ class CsvDataSource(DataSource):
         accepted as value separators and the following columns are all
         mandatory:
 
-            station, t, x, y, z, sx, sy, sz
+            station, x, y, z
 
-        where station is the station name, t a timestamp given in decimalyears,
+        In addition the following optional columns can be added
+
+            t, sx, sy, sz, weight.
+
+        Where station is the station name, t a timestamp given in decimalyears,
         (x,y,z) are the spatial coordinates and (sx, sy, sz) are the corresponding
-        standard deviation of those coordinates. Coordinate weights can be given
-        in a column named weigth. If weights are not given they are set to 1.0.
+        standard deviation of those coordinates.
+
+        If columns t, sx, sy and sz are not available in the CSV-file values for
+        them will have to be set using the override functionality.
+
+        Coordinate weights can be given in a column named weigth. If weights are not
+        given they are set to 1.0.
 
         The column order can be changed by specifying `columns`. In case there
         are more columns than needed in the CSV-file, they can be skipped using
