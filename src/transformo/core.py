@@ -474,16 +474,9 @@ class Operator(pydantic.BaseModel):
             return False
 
         # If we get to here, no parameters were supplied by the user and
-        # we are expected to estimate them. We don't want to spend to much
-        # energy on this, so simple coordinate and weight matrices are
-        # given as input. If `estimate()` is implemented *some* parameters
-        # will be estimated and stored in the `Operator` but they will be
-        # discarded when `estimate()` is executed again with proper input.
-        ones = np.ones(shape=(4, 3))
-        twos = ones * 2
-        try:
-            self.estimate(ones, ones, twos, twos)
-        except NotImplementedError:
+        # we are expected to estimate them. We can only do that if the
+        # operator has overloaded the `Operator.estimate` method.
+        if type(self).estimate == Operator.estimate:
             return False
 
         return True
