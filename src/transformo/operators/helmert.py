@@ -378,34 +378,43 @@ class Helmert7Param(HelmertTranslation):
             return np.rad2deg(rad) * 3600
 
         # Build design matrix
-        N = len(source_coordinates)
-        A = np.zeros((N * 3, 7))
+        n = len(source_coordinates)
+        A = np.zeros((n * 3, 7))
+        for i, x in enumerate(source_coordinates):
+            # Note that the R components below appear to be the wrong rotation convention
+            # but when setting up the coeffecient matrix coeffecients have slightly different
+            # order, that ends up looking like the transposed rotation matrix.
+            if self.convention == RotationConvention.POSITION_VECTOR:
+                R = np.array(
+                    [
+                        [0, x[2], -x[1]],
+                        [-x[2], 0, x[0]],
+                        [x[1], -x[0], 0],
+                    ]
+                )
+            else:
+                R = np.array(
+                    [
+                        [0, -x[2], x[1]],
+                        [x[2], 0, -x[0]],
+                        [-x[1], x[0], 0],
+                    ]
+                )
 
-        for i, c in enumerate(source_coordinates):
-            R = np.array(
-                [
-                    [0, c[2], -c[1]],
-                    [-c[2], 0, c[0]],
-                    [c[1], -c[0], 0],
-                ]
-            )
+            A[i * 3 : i * 3 + 3, :] = np.column_stack([np.eye(3), x[0:3], R])
 
-            if self.convention == RotationConvention.COORDINATE_FRAME:
-                R = R.T
+        y = target_coordinates[:, 0:3].flatten()
 
-            A[i * 3 : i * 3 + 3, :] = np.column_stack([np.eye(3), c[0:3], R])
+        # coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
+        beta = np.linalg.inv(A.T @ A) @ A.T @ y
 
-        b = target_coordinates[:, 0:3].flatten()
+        self.x = beta[0]
+        self.y = beta[1]
+        self.z = beta[2]
 
-        coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
+        k = beta[3]
+        self.s = (k - 1) * 1e6  # [ppm]
 
-        self.x = coeffs[0]
-        self.y = coeffs[1]
-        self.z = coeffs[2]
-
-        sd = coeffs[3]
-        self.s = (sd - 1) * 1e6  # [ppm]
-
-        self.rx = rad2arcsec(coeffs[4] / sd)
-        self.ry = rad2arcsec(coeffs[5] / sd)
-        self.rz = rad2arcsec(coeffs[6] / sd)
+        self.rx = rad2arcsec(beta[4] / k)
+        self.ry = rad2arcsec(beta[5] / k)
+        self.rz = rad2arcsec(beta[6] / k)
