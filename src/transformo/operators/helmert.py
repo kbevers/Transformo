@@ -403,10 +403,13 @@ class Helmert7Param(HelmertTranslation):
 
             A[i * 3 : i * 3 + 3, :] = np.column_stack([np.eye(3), x[0:3], R])
 
+        # Build weights matrix
+        W = np.eye(n * 3) * source_weights.flatten()
+
         y = target_coordinates[:, 0:3].flatten()
 
-        # coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
-        beta = np.linalg.inv(A.T @ A) @ A.T @ y
+        # beta, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
+        beta = np.linalg.inv(A.T @ W @ A) @ A.T @ W @ y
 
         self.x = beta[0]
         self.y = beta[1]

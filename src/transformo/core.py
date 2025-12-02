@@ -289,6 +289,8 @@ class DataSource(pydantic.BaseModel):
 
             weight = (1 / stddev**2) * station_weight
         """
+
+        # Coordinate.weights() does the heavy lifting, here we just reorder the data
         return np.array(
             [c.weights for c in self.coordinates]  # pylint: disable=not-an-iterable
         )
