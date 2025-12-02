@@ -376,8 +376,8 @@ class TopocentricResidualPresenter(Presenter):
 
             templist = []
             for m, t in zip(model, target):
-                pipeline = f"+proj=topocentric +ellps=GRS80 +X_0={t[0]} +Y_0={t[1]} +Z_0={t[2]}"
-                enu_diffs = Transformer.from_projstring(pipeline).transform_one(m)
+                pipeline = f"+proj=topocentric +ellps=GRS80 +X_0={m[0]} +Y_0={m[1]} +Z_0={m[2]}"
+                enu_diffs = Transformer.from_projstring(pipeline).transform_one(t)
                 templist.append(np.array(enu_diffs))
                 residuals = np.array(templist)
 
