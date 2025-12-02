@@ -376,8 +376,8 @@ class TopocentricResidualPresenter(Presenter):
 
             templist = []
             for m, t in zip(model, target):
-                pipeline = f"+proj=topocentric +ellps=GRS80 +X_0={t[0]} +Y_0={t[1]} +Z_0={t[2]}"
-                enu_diffs = Transformer.from_projstring(pipeline).transform_one(m)
+                pipeline = f"+proj=topocentric +ellps=GRS80 +X_0={m[0]} +Y_0={m[1]} +Z_0={m[2]}"
+                enu_diffs = Transformer.from_projstring(pipeline).transform_one(t)
                 templist.append(np.array(enu_diffs))
                 residuals = np.array(templist)
 
@@ -435,11 +435,11 @@ class TopocentricResidualPresenter(Presenter):
         # prepare data structure
         for feature in self._geojson_features:
             key = feature["properties"]["station"]
-            x, y, z, norm_2d, norm_3d = self._data["residuals"][key]
+            e, n, u, norm_2d, norm_3d = self._data["residuals"][key]
 
-            feature["properties"]["residual_n"] = x
-            feature["properties"]["residual_e"] = y
-            feature["properties"]["residual_u"] = z
+            feature["properties"]["residual_n"] = n
+            feature["properties"]["residual_e"] = e
+            feature["properties"]["residual_u"] = u
             feature["properties"]["residual_planar"] = norm_2d
             feature["properties"]["residual_total"] = norm_3d
 
@@ -454,7 +454,7 @@ class TopocentricResidualPresenter(Presenter):
     def as_markdown(self) -> str:
         fmt = "< 10.3g"  # three significant figures, could potentially be an option
 
-        header = ["Station", "North", "East", "Up", "Planar residual", "Total residual"]
+        header = ["Station", "East", "North", "Up", "Planar residual", "Total residual"]
         rows = []
         for station, residuals in self._data["residuals"].items():
             row = [station, *[format(r, fmt) for r in residuals]]
@@ -472,7 +472,7 @@ class TopocentricResidualPresenter(Presenter):
 
         text += "\n\n### Residual statistics\n"
 
-        header = ["Measure", "North", "East", "Up", "Planar residual", "Total residual"]
+        header = ["Measure", "East", "North", "Up", "Planar residual", "Total residual"]
         rows = []
         for measure, values in self._data["stats"].items():
             row = [measure, *[format(v, fmt) for v in values]]
