@@ -294,7 +294,10 @@ def test_helmert7parameter_estimation(source_coordinates, target_coordinates):
         small_angle_approximation=True,
     )
 
-    weights = np.ones_like(source_coordinates)
+    # coordinate arrays contain epochs in the fourth column,
+    # we only have weights for the spatial parts of a coordinate
+    weights = np.ones((source_coordinates.shape[0], 3))
+
     h.estimate(source_coordinates, target_coordinates, weights, weights)
 
     estimated_coordinates = h.forward(source_coordinates)
