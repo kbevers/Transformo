@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 import numpy as np
 from numpy import cos, sin
 
+from transformo import logger
 from transformo._typing import CoordinateMatrix, Matrix, Vector
 from transformo.core import Operator
 from transformo.datatypes import Parameter
@@ -179,6 +180,11 @@ class RotationConvention(enum.Enum):
     COORDINATE_FRAME = "coordinate_frame"
 
 
+def rad2arcsec(rad) -> float:
+    return np.rad2deg(rad) * 3600
+
+
+# All rotation matrices below follow POSITION_VECTOR
 # fmt: off
 def R1(rx: float) -> Matrix:
     """Rotation matrix for rotating about the x-axis."""
@@ -209,10 +215,54 @@ def R3(rz: float) -> Matrix:
             [      0,        0, 1],
         ]
     )
+
+# Derivatives of the rotation matrix.
+# Derivation of trig functions goes like this:
+#
+#   sin -> cos -> -sin > -cos -> sin
+
+def dR1(rx: float, ry: float, rz: float) -> Matrix:
+    """rx-derivative of the rotation matrix R."""
+
+    dR = np.array(
+        [
+            [0,        0,        0],
+            [0, -sin(rx), -cos(rx)],
+            [0,  cos(rx), -sin(rx)]
+        ]
+    )
+
+    return R3(rz) @ R2(ry) @ dR
+
+def dR2(rx: float, ry: float, rz: float) -> Matrix:
+    """ry-derivative of the rotation matrix R."""
+
+    dR = np.array(
+        [
+            [-sin(ry), 0,  cos(ry)],
+            [       0, 0,        0],
+            [-cos(ry), 0, -sin(ry)]
+        ]
+    )
+
+    return R3(rz) @ dR @ R1(rx)
+
+def dR3(rx: float, ry: float, rz: float) -> Matrix:
+    """rx-derivative of the rotation matrix R."""
+
+    dR = np.array(
+        [
+            [-sin(rz), -cos(rz), 0],
+            [ cos(rz), -sin(rz), 0],
+            [       0,        0, 0],
+        ]
+    )
+
+    return dR @ R2(ry) @ R1(rx)
 # fmt: on
 
 
-class Helmert7Param(HelmertTranslation):
+class Helmert7ParamLinear(HelmertTranslation):
     """
     The 7 paramter Helmert transformation performs a translation in the three
     principal directions of a earth-centered, earth-fixed coordinate system (or
@@ -233,9 +283,9 @@ class Helmert7Param(HelmertTranslation):
     # a Literal["helmert_7param"], so we have it look the other
     # way for a brief moment when checking the types.
     if TYPE_CHECKING:
-        type: Any = "helmert_7param"
+        type: Any = "helmert_7param_linear"
     else:
-        type: Literal["helmert_7param"] = "helmert_7param"
+        type: Literal["helmert_7param_linear"] = "helmert_7param_linear"
 
     convention: RotationConvention
     small_angle_approximation: bool = True
@@ -374,9 +424,6 @@ class Helmert7Param(HelmertTranslation):
         Estimate parameters using small angle approximation.
         """
 
-        def rad2arcsec(rad) -> float:
-            return np.rad2deg(rad) * 3600
-
         # Build design matrix
         n = len(source_coordinates)
         A = np.zeros((n * 3, 7))
@@ -421,3 +468,183 @@ class Helmert7Param(HelmertTranslation):
         self.rx = rad2arcsec(beta[4] / k)
         self.ry = rad2arcsec(beta[5] / k)
         self.rz = rad2arcsec(beta[6] / k)
+
+
+class Helmert7ParamNonLinear(Helmert7ParamLinear):
+    """
+    The 7 paramter Helmert transformation performs a translation in the three
+    principal directions of a earth-centered, earth-fixed coordinate system (or
+    a similarly shaped celestial body), as well as rotations around those axes
+    and a scaling of the coordinates.
+
+    A coordinate in vector Va is transformed into vector Vb using the expression
+    below:
+
+        Vb = T + (1+s*10^-6) * R * Va
+
+    Where T consist of the three translation parameters, s is the scaling factor
+    and R is a rotation matrix. The principal components of T, s and R can be
+    estimated, resulting in three translations, three rotations and a scale factor.
+
+    Similar to `Helmert7ParamLinear` in most functionality but the parameter
+    estimation is different. Here estimation of the parameters is done using the
+    full rotation matrix which makes the inversion a non-linear problem. The
+    inversion is done using an iterative approach.
+    """
+
+    # mypy will complain since Helmert7Param defines this as
+    # a Literal["helmert_7param"], so we have it look the other
+    # way for a brief moment when checking the types.
+    if TYPE_CHECKING:
+        type: Any = "helmert_7param_nonlinear"
+    else:
+        type: Literal["helmert_7param_nonlinear"] = "helmert_7param_nonlinear"
+
+    def estimate(
+        self,
+        source_coordinates: CoordinateMatrix,
+        target_coordinates: CoordinateMatrix,
+        source_weights: CoordinateMatrix,
+        target_weights: CoordinateMatrix,
+    ) -> None:
+        """
+        Estimate parameters using the full rotation matrix.
+
+        n = number of coordinate values
+        m = number of parameters
+        Jacobian: size n x m
+
+        Approach:
+
+        1. Determine first guess
+        2. iterate k times
+            a. Build Jacobian matrix (iterate over coordinates)
+            b. Setup normal equations
+            c. Find solution to normal equations, i.e.
+        5.
+
+        Notes for Pasi's code:
+
+        Variable translator:
+
+        Pasi            Kristian
+        ----            --------
+        deltax          beta
+        ex              rx
+        ey              ry
+        ez              rz
+        A               J
+        """
+
+        def log_parameters(beta: Vector, n: int) -> None:
+            fmt = "-8.5f"
+            t = beta[0:3]
+            k = beta[3]
+            rx = rad2arcsec(beta[4])
+            ry = rad2arcsec(beta[5])
+            rz = rad2arcsec(beta[6])
+            log_params = f"{n: 3d}: "
+            log_params += f"x={t[0]:{fmt}} y={t[1]:{fmt}} z={t[2]:{fmt}} "
+            log_params += f"s={(k - 1) * 1e6:{fmt}} rx={rx:{fmt}} "
+            log_params += f"ry={ry:{fmt}} rz={rz:{fmt}}"
+            logger.info(log_params)
+
+        n = len(source_coordinates)
+
+        # prepare data
+        x = source_coordinates[:, 0:3].flatten()
+        W = np.eye(n * 3) * source_weights.flatten()
+
+        # initial guesses
+        x0 = np.average(source_coordinates[:, 0:3], axis=0, weights=source_weights)
+        y0 = np.average(target_coordinates[:, 0:3], axis=0, weights=target_weights)
+        t0 = y0 - x0
+
+        # initial parameter guess
+        beta = np.array([t0[0], t0[1], t0[2], 1, 0, 0, 0])
+        log_parameters(beta, 0)
+
+        for j in range(10):
+            t = beta[0:3]
+            k = beta[3]
+            rx = beta[4]
+            ry = beta[5]
+            rz = beta[6]
+
+            # set up rotation matrix and its derivatives
+            R = R3(rz) * R2(ry) * R1(rx)
+            dRx = dR1(rx, ry, rz)
+            dRy = dR2(rx, ry, rz)
+            dRz = dR3(rx, ry, rz)
+
+            # forward calculation with current parameters
+            yk = t + k * source_coordinates[:, 0:3] @ R
+
+            # residual vector
+            delta_y = target_coordinates[:, 0:3].flatten() - yk.flatten()
+
+            # Jacobian. 7 parameters, n coordinates of 3 values each
+            J = np.zeros((3 * n, 7))
+            for i in range(n):
+                xi = x[i * 3 : i * 3 + 3]
+
+                J[i * 3 : i * 3 + 3, :] = np.column_stack(
+                    [np.eye(3), R @ xi, k * dRx @ xi, k * dRy @ xi, k * dRz @ xi]
+                )
+
+            # solve normal equations
+            delta_beta = np.linalg.inv(J.T @ J) @ J.T @ delta_y
+            beta = beta + delta_beta
+
+            # check for convergence
+            translation_convergence = np.sqrt(np.mean(beta[0:3] ** 2)) < 1e-5
+            rotation_convergence = np.sqrt(np.mean(beta[4:7] ** 2)) < 1e-12
+
+            log_parameters(beta, j + 1)
+
+            if translation_convergence & rotation_convergence:
+                break
+
+
+"""
+Parking lot
+
+
+def rad2arcsec(rad: float) -> float:
+    return np.rad2deg(rad) * 3600
+
+def f(x: np.array, beta: np.array):
+    Forward method.
+    t = beta[0:3]
+    s = beta[3]
+    rx = beta[4]
+    ry = beta[5]
+    rz = beta[6]
+
+    n = len(x) // 3
+    y = np.zeros(len(x))
+    for i in range(n):
+        # A[i * 3 : i * 3 + 3, :] = np.column_stack([np.eye(3), x[0:3], R])
+        xi = x[i*3 : i*3+3]
+        y[i*3 : i*3+3] = t + s * R3(rx) @ R2(ry) @ R1(rx) @ xi
+
+    return y
+
+
+# k = np.sqrt( np.sum(np.square(x1)) / np.sum(np.square(y1)) )
+
+
+# Normal equation logic
+#...
+
+beta = beta0
+
+# check for convergence
+y_k = f(x, beta)
+r = y-y_k
+
+print(beta)
+S = np.sum(np.square(r))
+print(S)
+
+"""
