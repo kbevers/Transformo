@@ -318,7 +318,7 @@ def test_helmert_7param_linear_estimation(source_coordinates, target_coordinates
     assert estimated_coordinates[-1, 2] == pytest.approx(target_coordinates[-1, 2])
 
 
-def test_helmert_7param_nonlinear_estimation(source_coordinates, target_coordinates):
+def test_helmert_7param_nonlinear_estimation(source_coordinates):
     """
     .
     """
@@ -327,12 +327,46 @@ def test_helmert_7param_nonlinear_estimation(source_coordinates, target_coordina
     from transformo import logger
 
     logger.setLevel(logging.INFO)
+
+    fwd = Helmert7ParamLinear(
+        convention=RotationConvention.POSITION_VECTOR,
+        small_angle_approximation=False,
+        x=12.423,
+        y=-53.153,
+        z=231.32,
+        s=-0.0356,
+        rx=0.0532,
+        ry=-0.0632,
+        rz=-0.2387,
+    )
+    target_coordinates = fwd.forward(source_coordinates)
+
     h = Helmert7ParamNonLinear(
         convention=RotationConvention.POSITION_VECTOR,
         small_angle_approximation=False,
     )
+    print()
 
     weights = np.ones((source_coordinates.shape[0], 3))
     h.estimate(source_coordinates, target_coordinates, weights, weights)
 
-    assert False
+    assert fwd.x == pytest.approx(h.x, abs=1e-5)
+    assert fwd.y == pytest.approx(h.y, abs=1e-5)
+    assert fwd.z == pytest.approx(h.z, abs=1e-5)
+    assert fwd.s == pytest.approx(h.s, abs=1e-5)
+    assert fwd.rx == pytest.approx(h.rx)
+    assert fwd.ry == pytest.approx(h.ry)
+    assert fwd.rz == pytest.approx(h.rz)
+
+    # i = Helmert7ParamLinear(
+    #     convention=RotationConvention.POSITION_VECTOR,
+    #     small_angle_approximation=True,
+    # )
+
+    # i.estimate(source_coordinates, truth_coordinates, weights, weights)
+    # print()
+    # for p in i.parameters:
+    #     try:
+    #         print(f"{p.name}={float(p.value):.5f}", end=" ")
+    #     except (ValueError, TypeError):
+    #         continue
