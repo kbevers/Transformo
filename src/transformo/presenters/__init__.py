@@ -78,6 +78,7 @@ from .coordinates import (
 )
 from .datasources import DatasourcePresenter
 from .proj import PROJPresenter
+from .statistics import LeaveOneOutPresenter
 
 __all__ = [
     "Presenter",
@@ -88,4 +89,5 @@ __all__ = [
     "TopocentricResidualPresenter",
     "CoordinateType",  # This might move elsewhere
     "DatasourcePresenter",
+    "LeaveOneOutPresenter",
 ]
