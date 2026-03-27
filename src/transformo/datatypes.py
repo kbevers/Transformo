@@ -176,3 +176,10 @@ class Parameter:
             return f"+{self.name}"
 
         return f"+{self.name}={self.value}"
+
+    @property
+    def is_number(self) -> bool:
+        """
+        Check if the parameter represent af numerical value.
+        """
+        return isinstance(self.value, float) or isinstance(self.value, int)

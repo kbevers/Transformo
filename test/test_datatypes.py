@@ -196,3 +196,17 @@ def test_parameter():
     float_parameter = Parameter("float", 123.432)
     assert float_parameter.is_flag is False
     assert float_parameter.as_proj_param == "+float=123.432"
+
+
+def test_parameter_is_number():
+    """Test the is_number property Parameter"""
+
+    p1 = Parameter("float", 1.234)
+    p2 = Parameter("int", 12)
+    p3 = Parameter("str", "hello")
+    p4 = Parameter("hex", 0x234)
+
+    assert p1.is_number
+    assert p2.is_number
+    assert not p3.is_number
+    assert p4.is_number
